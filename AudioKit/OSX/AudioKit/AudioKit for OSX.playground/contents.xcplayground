@@ -31,6 +31,7 @@
         <page name='Filter Section Example'/>
         <page name='Flat Frequency Response Reverb'/>
         <page name='Flat Frequency Response Reverb Operation'/>
+        <page name='Flute'/>
         <page name='FM Oscillator'/>
         <page name='FM Oscillator Operation'/>
         <page name='Formant Filter'/>
@@ -47,6 +48,7 @@
         <page name='Low Pass Filter'/>
         <page name='Low Pass Filter Operation'/>
         <page name='Low Shelf Filter'/>
+        <page name='Mandolin'/>
         <page name='Metronome'/>
         <page name='Mixing Nodes'/>
         <page name='Modal Resonance Filter'/>
@@ -110,5 +112,6 @@
         <page name='Variable Delay Operation'/>
         <page name='XY Pad'/>
         <page name='3D Panner'/>
+        <page name='Drawbar Organ'/>
     </pages>
 </playground>

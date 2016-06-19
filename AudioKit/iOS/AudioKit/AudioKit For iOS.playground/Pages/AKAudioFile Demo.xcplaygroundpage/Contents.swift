@@ -2,20 +2,22 @@
 //:
 //: ---
 //:
-//: ## AKAudioFile
+//: ## AKAudioFile Demo
 //:
 //: AKAudioFile inherits from AVAudioFile so you can use it just like any AVAudioFile :
 import PlaygroundSupport
 import AudioKit
 
 // Let's create an AKaudioFile :
-let ak = try? AKAudioFile(forReadingFileName: "click", withExtension: "wav", fromBaseDirectory: .resources)
+let ak = try? AKAudioFile(forReadingFileName: "click",
+                          withExtension: "wav",
+                          fromBaseDirectory: .resources)
 
 // converted in an AVAudioFile
 let av = ak! as AVAudioFile
 
 //converted back into an AKAudioFile
-let ak2 = try? AKAudioFile(fromAVAudioFile: av)
+let ak2 = try? AKAudioFile(forReadingAVAudioFile: av)
 
 
 //: The baseDirectory parameter if an enum value from AKAudioFile.BaseDirectory :
@@ -24,14 +26,20 @@ let resourcesDir = AKAudioFile.BaseDirectory.resources
 let tempDir = AKAudioFile.BaseDirectory.temp
 
 // So to load an AKAudiofile from this playground Resources folder :
-let drumloop = try? AKAudioFile(forReadingFileName: "drumloop", withExtension: "wav", fromBaseDirectory: .resources)
+let drumloop = try? AKAudioFile(forReadingFileName: "drumloop",
+                                withExtension: "wav",
+                                fromBaseDirectory: .resources)
 
 //: You can load a file from a sub directory like this:
-let fmpia = try? AKAudioFile(forReadingFileName: "Sounds/fmpia1", withExtension: "wav", fromBaseDirectory: .resources)
+let fmpia = try? AKAudioFile(forReadingFileName: "Sounds/fmpia1",
+                             withExtension: "wav",
+                             fromBaseDirectory: .resources)
 
 //: As AKAudioFile is an optional, it will be set to nil if a problem occurs. Notice that an error message is printed in the debug area, and an error is thrown...
 do {
-    let nonExistentFile = try AKAudioFile(forReadingFileName: "aFileName", withExtension: "wav", fromBaseDirectory: .resources)
+    let nonExistentFile = try AKAudioFile(forReadingFileName: "aFileName",
+                                          withExtension: "wav",
+                                          fromBaseDirectory: .resources)
 } catch let error as NSError {
     print ("There's an error: \(error)")
 }
@@ -50,21 +58,29 @@ func myExportCallBack(){
     {
         print ("Export succeeded")
         // we get the resulting AKAudioFile
-        let exportedfile = myExport?!.exportedAKAudioFile!
+        let exportedfile = myExport?!.exportedAudioFile!
+
+
         // If it is valid, we can play it :
         if exportedfile != nil {
-            let player = AKAudioPlayer(exportedfile!.url.absoluteString)
+
+            print (exportedfile?.fileNameWithExtension)
+            let player = try? AKAudioPlayer(file: exportedfile!)
             AudioKit.output = player
             AudioKit.start()
-            player.play()
+            player!.play()
         }
+
     } else {
         print ("Export failed")
     }
 }
 
 //: Then, we can extract from 1 to 2 seconds of drumloop, as an mp4 file that will be written in documents directory. If the destination file exists, it will be overwritten.
-let myExport = try? drumloop?.export(withFileName: "drumloopExported", withExtension: .mp4, toDirectory: .documents, callBack: myExportCallBack, from: 1, to: 2)
+let myExport = try? drumloop?.export(withFileName: "drumloopExported",
+                                     withExtension: .m4a, toDirectory: .documents,
+                                     callBack: myExportCallBack,
+                                     from: 1, to: 2)
 
 
 

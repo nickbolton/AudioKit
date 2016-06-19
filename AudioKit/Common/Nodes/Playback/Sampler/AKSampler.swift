@@ -60,7 +60,20 @@ public class AKSampler: AKNode {
     public func loadEXS24(_ file: String) {
         loadInstrument(file, type: "exs")
     }
-    
+
+    /// Load an AKAudioFile
+    ///
+    /// - parameter file: an AKAudioFile
+    ///
+    public func loadAKAudioFile(file:AKAudioFile) throws
+    {
+        do {
+            try samplerUnit.loadAudioFilesAtURLs([file.url])
+        } catch let error as NSError{
+            print("AKSampler Error loading \"\(file.fileNameWithExtension)\" !...")
+            throw error
+        }
+    }
 
     private func loadSoundFont(_ file: String, preset: Int, type: Int) {
         guard let url = Bundle.main().urlForResource(file, withExtension: "sf2") else {
@@ -138,6 +151,17 @@ public class AKSampler: AKNode {
             samplerUnit.masterGain = Float(newGain)
         }
     }
+    
+    /// Pan.
+    /// Range:   -1 - 1
+    /// Default: 0
+    public var pan: Double = 0 {
+        didSet {
+            samplerUnit.stereoPan = Float(100.0 * pan)
+        }
+    }
+    
+    
     // MARK: - Playback
     
     /// Play a MIDI Note

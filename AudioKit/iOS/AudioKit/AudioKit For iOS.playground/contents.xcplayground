@@ -4,9 +4,10 @@
         <page name='Table Of Contents'/>
         <page name='3D Panner'/>
         <page name='AKAudioFile Demo'/>
-        <page name='AKAudioPlayer V2'/>
+        <page name='AKMagneto'/>
         <page name='Amplitude Envelope'/>
         <page name='Auto Wah Wah'/>
+        <page name='Audio Player'/>
         <page name='AutoPan Operation'/>
         <page name='AutoWah Operation'/>
         <page name='Balancing Nodes'/>
@@ -34,6 +35,7 @@
         <page name='Filter Section Example'/>
         <page name='Flat Frequency Response Reverb Operation'/>
         <page name='Flat Frequency Response Reverb'/>
+        <page name='Flute'/>
         <page name='FM Oscillator Operation'/>
         <page name='FM Oscillator'/>
         <page name='Formant Filter'/>
@@ -51,6 +53,7 @@
         <page name='Low Pass Filter'/>
         <page name='Low Shelf Filter'/>
         <page name='Low-Frequency Oscillating of Parameters'/>
+        <page name='Mandolin'/>
         <page name='Metal Bar'/>
         <page name='Metronome'/>
         <page name='Mixing Nodes'/>
@@ -89,7 +92,7 @@
         <page name='Sean Costello Reverb Operation'/>
         <page name='Sean Costello Reverb'/>
         <page name='Sequencer - Multiple output'/>
-        <page name='Sequencer - Single output'/>
+        <page name='Sequencer - single output'/>
         <page name='Simple Reverb'/>
         <page name='Splitting Nodes'/>
         <page name='Sporth Based Effect'/>
@@ -111,5 +114,6 @@
         <page name='Using Functions'/>
         <page name='Variable Delay Operation'/>
         <page name='Variable Delay'/>
+        <page name='Drawbar Organ'/>
     </pages>
 </playground>
