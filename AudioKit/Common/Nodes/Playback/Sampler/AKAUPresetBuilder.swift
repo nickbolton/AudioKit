@@ -67,8 +67,8 @@ public class AKAUPresetBuilder {
         let endNoteKey = "endnote"
         let filenameKey = "filename"
         var loadSoundsArr = Array<NSMutableDictionary>()
-        var sampleZoneXML = ""
-        var sampleIDXML = ""
+        let sampleZoneXML = ""
+        let sampleIDXML = ""
         var sampleIteration = 0
         let sampleNumStart = 268435457
         

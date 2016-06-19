@@ -103,7 +103,7 @@ public class AKMagneto {
         }
 
         self.bufferSize = bufferSize
-        let ioBufferDuration:NSTimeInterval = Double(bufferSize) / 44100.0
+        let ioBufferDuration:TimeInterval = Double(bufferSize) / 44100.0
 
         // AVAudioSession setup
         do {
@@ -142,7 +142,7 @@ public class AKMagneto {
             throw error
         }
 
-        internalPlayer.replaceAudioFile(readingTape!)
+        internalPlayer.replaceAudioFile(file: readingTape!)
 
 
     }
@@ -204,10 +204,10 @@ public class AKMagneto {
 
         recording = true
 
-        node.avAudioNode.installTapOnBus(0, bufferSize: bufferSize, format: tape.processingFormat, block:
+        node.avAudioNode.installTap(onBus: 0, bufferSize: bufferSize, format: tape.processingFormat, block:
             { (buffer: AVAudioPCMBuffer!, time: AVAudioTime!) -> Void in
                 do{
-                    try self.tape.writeFromBuffer(buffer)
+                    try self.tape.write(from: buffer)
                     print("writing ( file duration:  \(self.tape.duration) seconds)")
                 }
                 catch let error as NSError{
@@ -221,7 +221,7 @@ public class AKMagneto {
     public func stopRecord() {
         if !recording { return }
         recording = false
-        node.avAudioNode.removeTapOnBus(0)
+        node.avAudioNode.removeTap(onBus: 0)
         print("Recording Stopped.")
     }
 
@@ -235,12 +235,12 @@ public class AKMagneto {
         }
 
         // Delete the file tape
-        let fileManager = NSFileManager.defaultManager()
+        let fileManager = FileManager.default()
         let url = tape.url
         let settings = tape.processingFormat.settings
 
         do {
-            try fileManager.removeItemAtPath(tape.url.absoluteString)
+            try fileManager.removeItem(atPath: tape.url.absoluteString!)
         }
         catch let error as NSError {
             print ("AKMagneto Error: cannot delete Recording file:  \(tape.fileNameWithExtension)")

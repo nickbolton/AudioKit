@@ -60,5 +60,5 @@ public func -(lhs: Beat, rhs: Beat) -> Beat {
 }
 
 public func %(lhs: Beat, rhs: Beat) -> Beat {
-    return Beat(lhs.value % rhs.value)
+    return Beat(lhs.value.truncatingRemainder(dividingBy: rhs.value))
 }

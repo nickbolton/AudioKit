@@ -152,34 +152,34 @@ public class AKTriangleOscillator: AKVoice {
 
         AUAudioUnit.registerSubclass(
             AKTriangleOscillatorAudioUnit.self,
-            asComponentDescription: description,
+            as: description,
             name: "Local AKTriangleOscillator",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
+        AVAudioUnit.instantiate(with: description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitGenerator = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitGenerator
-            self.internalAU = avAudioUnitGenerator.AUAudioUnit as? AKTriangleOscillatorAudioUnit
+            self.internalAU = avAudioUnitGenerator.auAudioUnit as? AKTriangleOscillatorAudioUnit
 
-            AudioKit.engine.attachNode(self.avAudioNode)
+            AudioKit.engine.attach(self.avAudioNode)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        frequencyParameter          = tree.valueForKey("frequency")          as? AUParameter
-        amplitudeParameter          = tree.valueForKey("amplitude")          as? AUParameter
-        crestParameter              = tree.valueForKey("crest")          as? AUParameter
-        detuningOffsetParameter     = tree.valueForKey("detuningOffset")     as? AUParameter
-        detuningMultiplierParameter = tree.valueForKey("detuningMultiplier") as? AUParameter
-
-        token = tree.tokenByAddingParameterObserver {
+        frequencyParameter          = tree.value(forKey: "frequency")          as? AUParameter
+        amplitudeParameter          = tree.value(forKey: "amplitude")          as? AUParameter
+        crestParameter              = tree.value(forKey: "crest")          as? AUParameter
+        detuningOffsetParameter     = tree.value(forKey: "detuningOffset")     as? AUParameter
+        detuningMultiplierParameter = tree.value(forKey: "detuningMultiplier") as? AUParameter
+        
+        let observer: AUParameterObserver = {
             address, value in
-
-            dispatch_async(dispatch_get_main_queue()) {
+            
+            let executionBlock = {
                 if address == self.frequencyParameter!.address {
                     self.frequency = Double(value)
                 } else if address == self.amplitudeParameter!.address {
@@ -192,7 +192,11 @@ public class AKTriangleOscillator: AKVoice {
                     self.detuningMultiplier = Double(value)
                 }
             }
+            
+            DispatchQueue.main.async(execute: executionBlock)
         }
+        
+        token = tree.token(byAddingParameterObserver: observer)
         internalAU?.frequency = Float(frequency)
         internalAU?.amplitude = Float(amplitude)
         internalAU?.crest = Float(crest)

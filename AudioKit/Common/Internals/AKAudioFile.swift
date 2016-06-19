@@ -52,8 +52,8 @@ public class AKAudioFile: AVAudioFile {
     // MARK: - private vars
     // Used for exporting, can be accessed with public .avAsset property
     private lazy var internalAVAsset: AVURLAsset = {
-        let avAssetUrl = NSURL(fileURLWithPath:self.url.absoluteString)
-        return  AVURLAsset(URL: avAssetUrl)
+        let avAssetUrl = URL(fileURLWithPath:self.url.absoluteString!)
+        return  AVURLAsset(url: avAssetUrl)
     }()
     
     
@@ -61,18 +61,18 @@ public class AKAudioFile: AVAudioFile {
     // explicitly override super.initializers
     // They are private as they're not supposed to be used directly
     // a convenience initialiser "from AVAudioFile" is available if needed
-    private override init(forReading fileURL: NSURL) throws {
+    private override init(forReading fileURL: URL) throws {
         try super.init(forReading: fileURL)
     }
     
-    private override init(forReading fileURL: NSURL,
+    private override init(forReading fileURL: URL,
                           commonFormat format: AVAudioCommonFormat,
                           interleaved interleavedStatus: Bool) throws {
         
         try super.init(forReading: fileURL, commonFormat: format, interleaved: interleavedStatus)
     }
     
-    private override init(forWriting fileURL: NSURL,
+    private override init(forWriting fileURL: URL,
                           settings: [String : AnyObject],
                           commonFormat format: AVAudioCommonFormat,
                           interleaved interleavedStatus: Bool) throws {
@@ -82,7 +82,7 @@ public class AKAudioFile: AVAudioFile {
                        interleaved: interleavedStatus)
     }
     
-    private override init(forWriting fileURL: NSURL, settings: [String:AnyObject]) throws {
+    private override init(forWriting fileURL: URL, settings: [String:AnyObject]) throws {
         try super.init(forWriting: fileURL, settings: settings)
     }
     
@@ -98,9 +98,9 @@ public class AKAudioFile: AVAudioFile {
         case .temp:
             filePath =  (NSTemporaryDirectory() as String) + "/" + fileNameWithExtension
         case .documents:
-            filePath =  (NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0]) + "/" + fileNameWithExtension
+            filePath =  (NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]) + "/" + fileNameWithExtension
         case .resources:
-            let path =  NSBundle.mainBundle().pathForResource(fileName, ofType: ext)
+            let path =  Bundle.main().pathForResource(fileName, ofType: ext)
             if path == nil {
                 print( "ERROR: AKAudioFile cannot find \"\(fileName).\(ext)\" in resources!...")
                 throw NSError(domain: NSURLErrorDomain, code: NSURLErrorFileDoesNotExist, userInfo: nil)
@@ -108,9 +108,9 @@ public class AKAudioFile: AVAudioFile {
             filePath = path!
             
         }
-        let fileManager = NSFileManager.defaultManager()
-        if fileManager.fileExistsAtPath(filePath) {
-            let fileUrl = NSURL(string: filePath)
+        let fileManager = FileManager.default()
+        if fileManager.fileExists(atPath: filePath) {
+            let fileUrl = URL(string: filePath)
             
             do {
                 try self.init(forReading: fileUrl!)
@@ -145,12 +145,12 @@ public class AKAudioFile: AVAudioFile {
         andFileExtension fileExtension: String = "caf",
         withSettings settings: [String : AnyObject] = AKSettings.audioFormat.settings,
         commonFormat format: AVAudioCommonFormat = AKSettings.audioFormat.commonFormat,
-        interleaved interleavedStatus: Bool = AKSettings.audioFormat.interleaved) throws {
+        interleaved interleavedStatus: Bool = AKSettings.audioFormat.isInterleaved) throws {
         
         let fileNameWithExtension: String
         // Create a unique file name if fileName == ""
         if fileName == "" {
-            fileNameWithExtension =  NSUUID().UUIDString + "." + fileExtension
+            fileNameWithExtension =  NSUUID().uuidString + "." + fileExtension
         } else {
             fileNameWithExtension = fileName + "." + fileExtension
         }
@@ -160,21 +160,21 @@ public class AKAudioFile: AVAudioFile {
         case .temp:
             filePath =  (NSTemporaryDirectory() as String) + "/" + fileNameWithExtension
         case .documents:
-            filePath =  (NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0]) + "/" + fileNameWithExtension
+            filePath =  (NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]) + "/" + fileNameWithExtension
         case .resources:
             print( "ERROR AKAudioFile: cannot create a file in applications resources!...")
             throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
         }
         
-        let nsurl = NSURL(string: filePath)
+        let nsurl = URL(string: filePath)
         guard nsurl != nil else {
             print( "ERROR AKAudioFile: directory \"\(filePath)\" isn't valid!...")
             throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
         }
-        let directoryPath = nsurl!.URLByDeletingLastPathComponent
+        let directoryPath = nsurl!.deletingLastPathComponent
         // Check if directory exists
-        let fileManager = NSFileManager.defaultManager()
-        if fileManager.fileExistsAtPath((directoryPath?.absoluteString)!) == false {
+        let fileManager = FileManager.default()
+        if fileManager.fileExists(atPath: (directoryPath().absoluteString)!) == false {
             print( "ERROR AKAudioFile: directory \"\(directoryPath)\" doesn't exists!...")
             throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
         }
@@ -221,14 +221,14 @@ public class AKAudioFile: AVAudioFile {
     // true if Audio Samples are interleaved
     public var interleaved: Bool {
         get {
-            return self.fileFormat.interleaved
+            return self.fileFormat.isInterleaved
         }
     }
     
     // true if file format is "deinterleaved native-endian float (AVAudioPCMFormatFloat32)", otherwise false
     public var standard: Bool {
         get {
-            return self.fileFormat.standard
+            return self.fileFormat.isStandard
         }
     }
     
@@ -271,7 +271,7 @@ public class AKAudioFile: AVAudioFile {
     // the directory
     public var directoryPath: NSURL {
         get {
-            return self.url.URLByDeletingLastPathComponent!
+            return self.url.deletingLastPathComponent()
         }
     }
     
@@ -285,7 +285,7 @@ public class AKAudioFile: AVAudioFile {
     // the file name without extension
     public var fileName: String {
         get {
-            return (self.url.URLByDeletingPathExtension?.lastPathComponent!)!
+            return (self.url.deletingPathExtension().lastPathComponent!)
         }
     }
     
@@ -324,7 +324,7 @@ public class AKAudioFile: AVAudioFile {
                        from inTime: Double = 0,
                        to outTime: Double  = 0 ) throws -> ExportSession {
         
-        let fromFileExt = fileExtension.lowercaseString
+        let fromFileExt = fileExtension.lowercased()
         
         // Only mp4, m4a, .wav, .aif can be exported...
         guard   ExportFormat.arrayOfStrings.contains(fromFileExt) else {
@@ -406,7 +406,7 @@ public class AKAudioFile: AVAudioFile {
             case .temp:
                 filePath =  (NSTemporaryDirectory() as String) + fileName + "." + String(outputFileExtension)
             case .documents:
-                filePath =  (NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0]) +  "/" + fileName + "." + String(outputFileExtension)
+                filePath =  (NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]) +  "/" + fileName + "." + String(outputFileExtension)
             case .resources:
                 print( "ERROR AKAudioFile export: cannot create a file in applications resources!...")
                 throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
@@ -417,20 +417,20 @@ public class AKAudioFile: AVAudioFile {
                 print( "ERROR AKAudioFile export: directory \"\(filePath)\" isn't valid!...")
                 throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
             }
-            let directoryPath = nsurl!.URLByDeletingLastPathComponent
+            let directoryPath = nsurl!.deletingLastPathComponent
             // Check if directory exists
-            let fileManager = NSFileManager.defaultManager()
-            if fileManager.fileExistsAtPath((directoryPath?.absoluteString)!) == false {
+            let fileManager = FileManager.default()
+            if fileManager.fileExists(atPath: (directoryPath?.absoluteString)!) == false {
                 print( "ERROR AKAudioFile export: directory \"\(directoryPath)\" doesn't exists!...")
                 throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
             }
             
             // Check if out file exists
-            if fileManager.fileExistsAtPath((nsurl?.absoluteString)!) {
+            if fileManager.fileExists(atPath: (nsurl?.absoluteString)!) {
                 // Then delete file
                 print ("AKAudioFile export: Output file already exists, trying to delete...")
                 do {
-                    try fileManager.removeItemAtPath((nsurl?.absoluteString)!)
+                    try fileManager.removeItem(atPath: (nsurl?.absoluteString)!)
                 } catch let error as NSError {
                     print ("Error !!! AKAudioFile: couldn't delete file \"\(nsurl!)\" !...")
                     print(error.localizedDescription)
@@ -440,7 +440,7 @@ public class AKAudioFile: AVAudioFile {
             }
             
             // must translate url as a fileUrl
-            exporter.outputURL = NSURL(fileURLWithPath: filePath)
+            exporter.outputURL = URL(fileURLWithPath: filePath)
             
             // Sets the output file encoding (avoid .wav encoded as m4a...)
             exporter.outputFileType = outputFileExtension.UTI as String
@@ -467,21 +467,21 @@ public class AKAudioFile: AVAudioFile {
             exporter.timeRange = timeRange
             
             // Everything is fine, we can export...
-            exporter.exportAsynchronouslyWithCompletionHandler(internalCompletionHandler)
+            exporter.exportAsynchronously(completionHandler: internalCompletionHandler)
         }
         
         private func internalCompletionHandler () {
             switch exporter.status {
-            case  AVAssetExportSessionStatus.Failed:
+            case  AVAssetExportSessionStatus.failed:
                 print("ERROR AKAudioFile: Export Failed!...")
                 print("Error: \(exporter.error)")
-            case AVAssetExportSessionStatus.Cancelled:
+            case AVAssetExportSessionStatus.cancelled:
                 print("ERROR AKAudioFile: Export Cancelled!...")
                 print("Error: \(exporter.error)")
             default:
                 // Export succeeded !
                 // We create an AKAudioFile from the exported audioFile
-                let url = NSURL(string: exporter.outputURL!.path!)
+                let url = URL(string: exporter.outputURL!.path!)
                 do {
                     outputAudioFile = try AKAudioFile(forReading: url!)
                 } catch let error as NSError {
@@ -495,12 +495,12 @@ public class AKAudioFile: AVAudioFile {
         
         // True if export succeeded...
         public var succeeded: Bool {
-            return exporter.status == .Completed
+            return exporter.status == .completed
         }
         
         // True if export failed...
         public var failed: Bool {
-            return exporter.status == .Failed
+            return exporter.status == .failed
         }
         
         /* status return current exporter status:

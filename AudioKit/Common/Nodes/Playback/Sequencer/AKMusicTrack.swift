@@ -14,7 +14,7 @@ public class AKMusicTrack {
     // MARK: - Properties
     
     /// The representation of Apple's underlying music track
-    public var internalMusicTrack: MusicTrack = nil
+    public var internalMusicTrack: MusicTrack? = nil
     
     private var name: String = "Unnamed"
     
@@ -28,7 +28,7 @@ public class AKMusicTrack {
     public var length: MusicTimeStamp {
         var size: UInt32 = 0
         var lengthFromMusicTimeStamp = MusicTimeStamp(0)
-        MusicTrackGetProperty(internalMusicTrack,
+        MusicTrackGetProperty(internalMusicTrack!,
                               kSequenceTrackProperty_TrackLength,
                               &lengthFromMusicTimeStamp,
                               &size)
@@ -42,7 +42,7 @@ public class AKMusicTrack {
     /// - parameter musicTrack: An Apple Music Track
     ///
     public init() {
-        trackPointer = UnsafeMutablePointer<MusicTrack>(internalMusicTrack)
+        trackPointer = UnsafeMutablePointer<MusicTrack>(internalMusicTrack!)
     }
     
     /// Initialize with a music track
@@ -53,7 +53,7 @@ public class AKMusicTrack {
         self.init()
         self.name = name
         internalMusicTrack = musicTrack
-        trackPointer = UnsafeMutablePointer<MusicTrack>(internalMusicTrack)
+        trackPointer = UnsafeMutablePointer<MusicTrack>(internalMusicTrack!)
         
         let data = [UInt8](name.utf8)
         
@@ -69,7 +69,7 @@ public class AKMusicTrack {
         })
 
         print("Creating meta event for \(name)")
-        let result = MusicTrackNewMetaEvent(internalMusicTrack, MusicTimeStamp(0), &metaEvent)
+        let result = MusicTrackNewMetaEvent(internalMusicTrack!, MusicTimeStamp(0), &metaEvent)
         if result != 0 {
             print("Unable to name Track")
         }
@@ -82,7 +82,7 @@ public class AKMusicTrack {
     public convenience init(musicTrack: MusicTrack, sequencer: AKSequencer) {
         self.init()
         internalMusicTrack = musicTrack
-        trackPointer = UnsafeMutablePointer<MusicTrack>(internalMusicTrack)
+        trackPointer = UnsafeMutablePointer<MusicTrack>(internalMusicTrack!)
         self.sequencer = sequencer
     }
     
@@ -91,7 +91,7 @@ public class AKMusicTrack {
     /// - parameter node: Apple AUNode for output
     ///
     public func setNodeOutput(node: AUNode) {
-        MusicTrackSetDestNode(internalMusicTrack, node)
+        MusicTrackSetDestNode(internalMusicTrack!, node)
     }
     
     /// Set loop info
@@ -104,7 +104,7 @@ public class AKMusicTrack {
         let loopDuration = duration.musicTimeStamp
         var loopInfo = MusicTrackLoopInfo(loopDuration: loopDuration,
                                           numberOfLoops: Int32(numberOfLoops))
-        MusicTrackSetProperty(internalMusicTrack,
+        MusicTrackSetProperty(internalMusicTrack!,
                               kSequenceTrackProperty_LoopInfo,
                               &loopInfo,
                               size)
@@ -120,28 +120,28 @@ public class AKMusicTrack {
         
         let size: UInt32 = 0
         var len = duration.musicTimeStamp
-        var tmpSeq: MusicSequence = nil
+        var tmpSeq: MusicSequence? = nil
         var seqPtr: UnsafeMutablePointer<MusicSequence>
-        var tmpTrack: MusicTrack = nil
+        var tmpTrack: MusicTrack? = nil
         seqPtr = UnsafeMutablePointer<MusicSequence>(tmpSeq)
         NewMusicSequence(&tmpSeq)
-        MusicTrackGetSequence(internalMusicTrack, seqPtr)
+        MusicTrackGetSequence(internalMusicTrack!, seqPtr)
         MusicSequenceNewTrack(tmpSeq, &tmpTrack)
         MusicTrackSetProperty(tmpTrack, kSequenceTrackProperty_TrackLength, &len, size)
-        MusicTrackCopyInsert(internalMusicTrack, 0, len, tmpTrack, 0)
+        MusicTrackCopyInsert(internalMusicTrack, 0, len, tmpTrack!, 0)
         self.clear()
-        MusicTrackSetProperty(internalMusicTrack, kSequenceTrackProperty_TrackLength, &len, size)
-        MusicTrackCopyInsert(tmpTrack, 0, len, internalMusicTrack, 0)
+        MusicTrackSetProperty(internalMusicTrack!, kSequenceTrackProperty_TrackLength, &len, size)
+        MusicTrackCopyInsert(tmpTrack, 0, len, internalMusicTrack!, 0)
         MusicSequenceDisposeTrack(tmpSeq, tmpTrack)
         
         DisposeMusicSequence(tmpSeq)
 
         //now to clean up any notes that are too long
-        var iterator: MusicEventIterator = nil
-        NewMusicEventIterator(internalMusicTrack, &iterator)
+        var iterator: MusicEventIterator? = nil
+        NewMusicEventIterator(internalMusicTrack!, &iterator)
         var eventTime = MusicTimeStamp(0)
         var eventType = MusicEventType()
-        var eventData: UnsafePointer<Void> = nil
+        var eventData: UnsafePointer<Void>? = nil
         var eventDataSize: UInt32 = 0
         var hasNextEvent: DarwinBoolean = false
         
@@ -152,10 +152,10 @@ public class AKMusicTrack {
             
             if eventType == kMusicEventType_MIDINoteMessage {
                 let data = UnsafePointer<MIDINoteMessage>(eventData)
-                let channel = data.memory.channel
-                let note = data.memory.note
-                let velocity = data.memory.velocity
-                let dur = data.memory.duration
+                let channel = data.pointee.channel
+                let note = data.pointee.note
+                let velocity = data.pointee.velocity
+                let dur = data.pointee.duration
                 
                 if eventTime + dur > duration.value {
                     var newNote = MIDINoteMessage(channel: channel, note: note, velocity: velocity, releaseVelocity: 0, duration: Float32(duration.value - eventTime))
@@ -176,12 +176,12 @@ public class AKMusicTrack {
     public func setLengthSoft(duration: Beat) {
         let size: UInt32 = 0
         var len = duration.musicTimeStamp
-        MusicTrackSetProperty(internalMusicTrack, kSequenceTrackProperty_TrackLength, &len, size)
+        MusicTrackSetProperty(internalMusicTrack!, kSequenceTrackProperty_TrackLength, &len, size)
     }
     
     /// Clear all events from the track
     public func clear() {
-        MusicTrackClear(internalMusicTrack, 0, length)
+        MusicTrackClear(internalMusicTrack!, 0, length)
     }
     
     /// Clear some events from the track
