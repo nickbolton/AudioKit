@@ -12,23 +12,23 @@ import AVFoundation
 
 @objc public protocol AKAudioPlayerDelegate: class {
     @objc optional func playerStoppedOrFinished()
-    @objc optional func playHeadSnapshot(playHead: Double)
+    @objc optional func playHeadSnapshot(_ playHead: Double)
 }
 
 /// Not so simple audio playback class
-public class AKAudioPlayer: AKNode, AKToggleable {
+public class AKAudioPlayer : AKNode, AKToggleable{
 
 
     // MARK: - private vars
 
-    private var internalAudioFile: AKAudioFile
+    private var audioFile:AKAudioFile
     private var internalPlayer = AVAudioPlayerNode()
     private var audioFileBuffer: AVAudioPCMBuffer?
     private var totalFrameCount: UInt32 = 0
     private var startingFrame: UInt32 = 0
     private var endingFrame: UInt32 = 0
     private var framesToPlayCount: UInt32 = 0
-    private var lastCurrentTime: Double = 0
+    private var lastCurrentTime:Double = 0
     private var paused = false
     private var playing = false
     private var currentTimeTimer: Timer?
@@ -37,23 +37,23 @@ public class AKAudioPlayer: AKNode, AKToggleable {
     // MARK: - public vars
 
     /// AKAudioPLayer delegate
-    public weak var delegate: AKAudioPlayerDelegate?
+    public weak var delegate:AKAudioPlayerDelegate?
     
     /// Will be triggered when AKAudioPlayer has finished to play.
     /// (will not as long as loop is on)
     public var completionHandler: AKCallback?
 
     // Boolean indicating whether or not to loop the playback
-    public var looping: Bool = false
+    public var looping:Bool = false
 
     // return the current AKAudioFile
-    public var audioFile: AKAudioFile {
-        return internalAudioFile
+    public var akAudioFile:AKAudioFile {
+        return audioFile
     }
 
     /// Total duration of one loop through of the file
     public var duration: Double {
-        return Double(totalFrameCount) / Double(internalAudioFile.sampleRate)
+        return Double(totalFrameCount) / Double(audioFile.sampleRate)
     }
 
     /// Output Volume (Default 1)
@@ -87,22 +87,22 @@ public class AKAudioPlayer: AKNode, AKToggleable {
 
     ///Snapshot playhead
     public func timerPlayerHead() {
-        self.delegate?.playHeadSnapshot?(playHead: self.playhead)
+        self.delegate?.playHeadSnapshot?(self.playhead)
     }
     
     /// Time within the audio file at the current time
     public var playhead: Double {
 
-        let endTime = Double(Double(endingFrame) / internalAudioFile.sampleRate)
-        let startTime = Double(Double(startingFrame) / internalAudioFile.sampleRate)
+        let endTime = Double(Double(endingFrame) / audioFile.sampleRate)
+        let startTime = Double(Double(startingFrame) / audioFile.sampleRate)
 
         if endTime > startTime {
 
             if looping {
-                return  startTime + currentTime % (endTime - startTime)
+                return  startTime + currentTime.truncatingRemainder(dividingBy: (endTime - startTime))
             } else {
                 if currentTime > endTime {
-                    return (startTime + currentTime) % (endTime - startTime)
+                    return (startTime + currentTime).truncatingRemainder(dividingBy: (endTime - startTime))
                 } else {
                     return (startTime + currentTime)
                 }
@@ -127,21 +127,24 @@ public class AKAudioPlayer: AKNode, AKToggleable {
 
     /// sets the start time, If it is playing, player will
     /// restart playing from the start time each time end time is set
-    public var startTime: Double {
+    public var startTime :Double
+        {
         get {
-            return Double(startingFrame) / internalAudioFile.sampleRate
+            return Double(startingFrame) / audioFile.sampleRate
 
         }
         set {
             let wasPlaying = playing
-            if newValue > Double(endingFrame) / internalAudioFile.sampleRate {
-                print ("ERROR: AKAudioPlayer cannot set a startTime bigger that endTime: \(Double(endingFrame) / internalAudioFile.sampleRate) seconds")
+            if newValue > Double(endingFrame) / audioFile.sampleRate
+            {
+                print ("ERROR: AKAudioPlayer cannot set a startTime bigger that endTime: \(Double(endingFrame) / audioFile.sampleRate) seconds")
             } else {
-                startingFrame = UInt32(newValue * internalAudioFile.sampleRate
+                startingFrame = UInt32(newValue * audioFile.sampleRate
                 )
                 stop()
             }
-            if wasPlaying {
+            if wasPlaying
+            {
                 play()
             }
         }
@@ -149,21 +152,24 @@ public class AKAudioPlayer: AKNode, AKToggleable {
 
     /// sets the end time, If it is playing, player will
     /// restart playing from the start time each time end time is set
-    public var endTime: Double {
+    public var endTime :Double
+        {
         get {
-            return Double(endingFrame) / internalAudioFile.sampleRate
+            return Double(endingFrame) / audioFile.sampleRate
 
         }
         set {
             let wasPlaying = playing
-            if newValue < Double(startingFrame) / internalAudioFile.sampleRate
-                || newValue > Double(Double(totalFrameCount) / internalAudioFile.sampleRate) {
-                print ("ERROR: AKAudioPlayer cannot set an endTime more than file's duration: \(duration) seconds or less than startTime: \(Double(startingFrame) / internalAudioFile.sampleRate) seconds")
+            if newValue < Double(startingFrame) / audioFile.sampleRate
+                || newValue > Double(Double(totalFrameCount) / audioFile.sampleRate)
+            {
+                print ("ERROR: AKAudioPlayer cannot set an endTime more than file's duration: \(duration) seconds or less than startTime: \(Double(startingFrame) / audioFile.sampleRate) seconds")
             } else {
-                endingFrame = UInt32(newValue * internalAudioFile.sampleRate)
+                endingFrame = UInt32(newValue * audioFile.sampleRate)
                 stop()
             }
-            if wasPlaying {
+            if wasPlaying
+            {
                 play()
             }
         }
@@ -174,9 +180,9 @@ public class AKAudioPlayer: AKNode, AKToggleable {
     // MARK: - public inits
 
     /// the safest way to proceed is to use an AKAudioFile
-    public init (file: AKAudioFile, completionHandler: AKCallback? = nil) throws {
+    public init (AKAudioFile file: AKAudioFile, completionHandler: AKCallback? = nil) throws {
 
-        self.internalAudioFile = file
+        self.audioFile = file
         self.completionHandler = completionHandler
 
         // Conforms to protocoles...
@@ -184,8 +190,7 @@ public class AKAudioPlayer: AKNode, AKToggleable {
         AudioKit.engine.attach(internalPlayer)
         let mixer = AVAudioMixerNode()
         AudioKit.engine.attach(mixer)
-        let format = AVAudioFormat(standardFormatWithSampleRate: self.internalAudioFile.sampleRate, channels: self.internalAudioFile.channelCount)
-        AudioKit.engine.connect(internalPlayer, to: mixer, format: format)
+        AudioKit.engine.connect(internalPlayer, to: mixer, format: AudioKit.format)
         self.avAudioNode = mixer
 
         internalPlayer.volume = 1.0
@@ -203,12 +208,12 @@ public class AKAudioPlayer: AKNode, AKToggleable {
         // build an empty AKAudioFile as a backup if we fail to create a valid one from "file"
         var akAudioFile = try? AKAudioFile()
 
-        let url = URL(string:file)
-        if url != nil {
+        let nsurl = URL(string:file)
+        if nsurl != nil {
             do {
-                let avAudioFile = try AVAudioFile(forReading: url!)
+                let avAudioFile = try AVAudioFile(forReading: nsurl!)
                 do {
-                    akAudioFile = try AKAudioFile(forWritingAVAudioFile: avAudioFile)
+                    akAudioFile = try AKAudioFile(fromAVAudioFile: avAudioFile)
                 } catch let error as NSError {
                     print ("Couldn't create an AKAudioFile with file: \(file) !...")
                     print("Error: \(error)")
@@ -222,7 +227,7 @@ public class AKAudioPlayer: AKNode, AKToggleable {
             print("Cannot create a valid nsurl with file:\(file)")
         }
         //
-        try! self.init (file: akAudioFile!, completionHandler: completionHandler)
+        try! self.init (AKAudioFile: akAudioFile! , completionHandler: completionHandler)
     }
 
 
@@ -230,14 +235,14 @@ public class AKAudioPlayer: AKNode, AKToggleable {
 
     public func start() {
 
-        if (!playing) {
+        if (!playing)  {
             playing = true
             paused = false
             internalPlayer.play()
             self.currentTimeTimer?.invalidate()
             self.currentTimeTimer = nil
             self.currentTimeTimer = Timer(timeInterval: 0.1, target: self, selector: #selector(AKAudioPlayer.timerPlayerHead), userInfo: nil, repeats: true)
-            RunLoop.current().add(self.currentTimeTimer!, forMode: RunLoopMode.commonModes)
+            RunLoop.current.add(self.currentTimeTimer!, forMode: RunLoopMode.commonModes)
         }
 
     }
@@ -245,7 +250,7 @@ public class AKAudioPlayer: AKNode, AKToggleable {
     /// Stop playback
     public func stop() {
 
-        lastCurrentTime = Double(startTime / internalAudioFile.sampleRate)
+        lastCurrentTime = Double(startTime / audioFile.sampleRate)
         playing = false
         paused = false
         internalPlayer.stop()
@@ -264,62 +269,63 @@ public class AKAudioPlayer: AKNode, AKToggleable {
         self.currentTimeTimer = nil
     }
 
-    /// resets in and out times for playing
-    public func reloadFile() {
-        stop()
 
-        var newAudioFile: AKAudioFile?
+    /// resets in and out times for playing
+    public func reloadFile()
+    {
+       var newAudioFile:AKAudioFile?
 
         do {
-            newAudioFile = try AKAudioFile(forReadingAVAudioFile: audioFile)
+            newAudioFile = try AKAudioFile(fromAVAudioFile: audioFile as AVAudioFile)
+
         } catch let error as NSError {
             print ("Couldn't reLoadFile !...")
             print("Error: \(error)")
 
         }
         if newAudioFile != nil {
-            internalAudioFile = newAudioFile!
-            initialize()
-
-        } else {
-            print ("Couldn't reLoadFile, newAudioFile is not valid !...")
+        audioFile = newAudioFile!
+        initialize()
         }
-        
-        
+        else{
+              print ("Couldn't reLoadFile, newAudioFile is not valid !...")
+        }
     }
 
     /// Replace the current audio file with a new AKAudioFile file
-    public func replaceAudioFile(file: AKAudioFile) {
-        print ("replace")
-        print("Before -> \(internalAudioFile.length)")
-        self.internalAudioFile = file
-        print("After -> \(internalAudioFile.length)")
+    public func replaceAKAudioFile(_ newAKAudioFile: AKAudioFile) {
+        self.audioFile = newAKAudioFile
         let wasPlaying = playing
         playing = false
         internalPlayer.stop()
         internalPlayer.reset()
         initialize()
-        if wasPlaying {
+        if wasPlaying
+        {
             play()
         }
     }
+
     /// To stay compatible with ealier version
     /// Should be deprecated...
     /// (very ugly !)
     /// File is replaced only if a valid AKAudioFile can be instanciated from the file (Path As String)
-    public func replaceFile(file: String) {
+    public func replaceFile(_ newFile: String) {
 
-        func warnFailed() {
-            print("Cannot replace with file:\(file)")
+        func warnFailed()
+        {
+            print("Cannot replace with file:\(newFile)")
         }
 
-        let nsurl = URL(string:file)
+        let nsurl = URL(string:newFile)
         if nsurl != nil {
             let newAvAudioFile = try? AVAudioFile(forReading: nsurl!)
-            if newAvAudioFile != nil {
-                let  audioFile = try? AKAudioFile(forReadingAVAudioFile: newAvAudioFile!)
-                if audioFile != nil {
-                    replaceAudioFile(file: audioFile!)
+            if newAvAudioFile != nil
+            {
+                let  newAKAudioFile = try? AKAudioFile(fromAVAudioFile: newAvAudioFile!)
+                if newAKAudioFile != nil
+                {
+                    replaceAKAudioFile(newAKAudioFile!)
                 } else {
                     warnFailed()
                 }
@@ -338,69 +344,73 @@ public class AKAudioPlayer: AKNode, AKToggleable {
      /// - parameter endTime: Time into the file at which to playing back will stop / Loop
      ///
      */
-    public func playFrom(time: Double, to endTime: Double = 0) {
+    public func playFrom(_ time: Double, to endTime:Double = 0) {
 
-        if endTime > 0 {
+        if endTime > 0
+        {
             self.endTime = endTime
 
         }
 
         self.startTime = time
 
-        if (endingFrame > startingFrame ) {
+        if (endingFrame > startingFrame ){
             stop()
             play()
             self.currentTimeTimer?.invalidate()
             self.currentTimeTimer = nil
             self.currentTimeTimer = Timer(timeInterval: 0.1, target: self, selector: #selector(AKAudioPlayer.timerPlayerHead), userInfo: nil, repeats: true)
-            RunLoop.current().add(self.currentTimeTimer!, forMode: RunLoopMode.commonModes)
-        } else {
-            print("ERROR AKaudioPlayer:  cannot play, \(internalAudioFile.fileNameWithExtension) is empty or segment is too short!")
+            RunLoop.current.add(self.currentTimeTimer!, forMode: RunLoopMode.commonModes)
+        }
+        else {
+            print("ERROR AKaudioPlayer:  cannot play, \(audioFile.fileNameWithExtension) is empty or segment is too short!")
         }
     }
 
 
     // MARK: - private funcs
 
-    private func initialize() {
+    private func initialize(){
 
-        audioFileBuffer = nil
-        totalFrameCount = UInt32(internalAudioFile.length)
+
+        totalFrameCount = UInt32(audioFile.length)
         startingFrame = 0
         endingFrame = totalFrameCount
 
         // Warning if file's samplerate don't match with AKSettings.samplesRate
-        if internalAudioFile.sampleRate != AKSettings.sampleRate {
-            print ("AKAudioPlayer Warning:  \"\(internalAudioFile.fileNameWithExtension)\" has a different sample rate from AudioKit's Settings !")
+        if audioFile.sampleRate != AKSettings.sampleRate
+        {
+            print ("AKAudioPlayer Warning:  \"\(audioFile.fileNameWithExtension)\" has a different sample rate from AudioKit's Settings !")
 
             print ("Audio will be played at a bad pitch/speed, in / out time will not be set properly !")
         }
 
         // stop will reset PCMbuffer and scheduleBuffer
-        if internalAudioFile.length > 0 {
-            setPCMBuffer()
-            scheduleBuffer()
+        if audioFile.length > 0
+        {
+            self.stop()
 
         } else {
-            print ("AKAudioPlayer Warning:  \"\(internalAudioFile.fileNameWithExtension)\" is an empty file")
+            print ("AKAudioPlayer Warning:  \"\(audioFile.fileNameWithExtension)\" is an empty file")
         }
     }
 
-    private func scheduleBuffer() {
+    private func scheduleBuffer(){
         if audioFileBuffer != nil {
             internalPlayer.scheduleBuffer(audioFileBuffer!, completionHandler: internalCompletionHandler)
         }
     }
 
-    private func setPCMBuffer() {
-        if internalAudioFile.length > 0 {
-            internalAudioFile.framePosition = Int64(startingFrame)
+    private func setPCMBuffer()
+    {
+        if audioFile.length > 0 {
+            audioFile.framePosition = Int64(startingFrame)
             framesToPlayCount = endingFrame - startingFrame
             audioFileBuffer = AVAudioPCMBuffer(
-                PCMFormat: internalAudioFile.processingFormat,
+                pcmFormat: audioFile.processingFormat,
                 frameCapacity: AVAudioFrameCount(totalFrameCount) )
             do {
-                try internalAudioFile.read(into: audioFileBuffer!, frameCount: framesToPlayCount)
+                try audioFile.read(into: audioFileBuffer!, frameCount: framesToPlayCount)
             } catch {
                 print("ERROR AKaudioPlayer: Could not read data into buffer.")
                 return
@@ -409,8 +419,9 @@ public class AKAudioPlayer: AKNode, AKToggleable {
     }
     
     /// Triggered when the player stops playing
-    private func internalCompletionHandler() {
-        if playing {
+    private func internalCompletionHandler()
+    {
+        if playing{
             if looping {
                 scheduleBuffer()
             } else {

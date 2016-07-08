@@ -79,7 +79,7 @@ public typealias AKCallback = (Void) -> Void
             var devid = input.deviceID
             AudioObjectSetPropertyData(
                 AudioObjectID(kAudioObjectSystemObject),
-                &address, 0, nil, UInt32(sizeof(AudioDeviceID)), &devid)
+                &address, 0, nil, UInt32(sizeof(AudioDeviceID.self)), &devid)
         #else
             if let devices = AVAudioSession.sharedInstance().availableInputs {
                 for dev in devices {
@@ -100,7 +100,7 @@ public typealias AKCallback = (Void) -> Void
             var devid = output.deviceID
             AudioObjectSetPropertyData(
                 AudioObjectID(kAudioObjectSystemObject),
-                &address, 0, nil, UInt32(sizeof(AudioDeviceID)), &devid)
+                &address, 0, nil, UInt32(sizeof(AudioDeviceID.self)), &devid)
         #else
             //not available on ios
         #endif
@@ -117,7 +117,7 @@ public typealias AKCallback = (Void) -> Void
             
             #if os(iOS)
                 
-                NotificationCenter.default().addObserver(
+                NotificationCenter.default.addObserver(
                     self,
                     selector: #selector(AudioKit.restartEngineAfterRouteChange(_:)),
                     name: NSNotification.Name.AVAudioSessionRouteChange,
@@ -135,7 +135,7 @@ public typealias AKCallback = (Void) -> Void
                         
                         // listen to AVAudioEngineConfigurationChangeNotification
                         // and restart the engine if it's stopped.
-                        NotificationCenter.default().addObserver(
+                        NotificationCenter.default.addObserver(
                             self,
                             selector: #selector(AudioKit.audioEngineConfigurationChange(_:)),
                             name: NSNotification.Name.AVAudioEngineConfigurationChange,
@@ -221,7 +221,7 @@ public typealias AKCallback = (Void) -> Void
                 try self.engine.start()
                 // Sends notification after restarting the engine, so it is safe to resume AudioKit functions.
                 if AKSettings.notificationsEnabled {
-                    NotificationCenter.default().post(
+                    NotificationCenter.default.post(
                         name: Notification.Name(rawValue: AKNotifications.engineRestartedAfterRouteChange),
                         object: nil,
                         userInfo: (notification as NSNotification).userInfo)
@@ -235,7 +235,7 @@ public typealias AKCallback = (Void) -> Void
     
     deinit {
         #if os(iOS)
-            NotificationCenter.default().removeObserver(
+            NotificationCenter.default.removeObserver(
                 self,
                 name: NSNotification.Name(rawValue: AKNotifications.engineRestartedAfterRouteChange),
                 object: nil)
