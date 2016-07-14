@@ -43,7 +43,7 @@ public class AKMIDINode: AKNode, AKMIDIListener {
     ///   - midiClient: A refernce to the midi client
     ///   - name: Name to connect with
     ///
-    public func enableMIDI(midiClient: MIDIClientRef, name: String) {
+    public func enableMIDI(_ midiClient: MIDIClientRef, name: String) {
         var result: OSStatus
         result = MIDIDestinationCreateWithBlock(midiClient, name, &midiIn, MyMIDIReadBlock)
         CheckError(result)
@@ -52,7 +52,7 @@ public class AKMIDINode: AKNode, AKMIDIListener {
     // MARK: - Handling MIDI Data
 
     // Send MIDI data to the audio unit
-    func handleMIDI(data1 data1: UInt32, data2: UInt32, data3: UInt32) {
+    func handleMIDI(data1: UInt32, data2: UInt32, data3: UInt32) {
         let status = Int(data1 >> 4)
         let noteNumber = Int(data2)
         let velocity = Int(data3)
@@ -73,7 +73,7 @@ public class AKMIDINode: AKNode, AKMIDIListener {
     ///   - velocity:   MIDI velocity
     ///   - channel:    MIDI channel
     ///
-    public func receivedMIDINoteOn(noteNumber: MIDINoteNumber,
+    public func receivedMIDINoteOn(_ noteNumber: MIDINoteNumber,
                                    velocity: MIDIVelocity,
                                    channel: Int) {
         if velocity > 0 {
@@ -84,16 +84,16 @@ public class AKMIDINode: AKNode, AKMIDIListener {
     }
 
     private func MyMIDIReadBlock(
-        packetList: UnsafePointer<MIDIPacketList>,
+        _ packetList: UnsafePointer<MIDIPacketList>,
         srcConnRefCon: UnsafeMutablePointer<Void>) -> Void {
 
-        let packetCount = Int(packetList.memory.numPackets)
-        let packet = packetList.memory.packet as MIDIPacket
-        var packetPointer: UnsafeMutablePointer<MIDIPacket> = UnsafeMutablePointer.alloc(1)
-        packetPointer.initialize(packet)
+        let packetCount = Int(packetList.pointee.numPackets)
+        let packet = packetList.pointee.packet as MIDIPacket
+        var packetPointer: UnsafeMutablePointer<MIDIPacket> = UnsafeMutablePointer(allocatingCapacity: 1)
+        packetPointer.initialize(with: packet)
 
         for _ in 0 ..< packetCount {
-            let event = AKMIDIEvent(packet: packetPointer.memory)
+            let event = AKMIDIEvent(packet: packetPointer.pointee)
 
             handleMIDI(data1: UInt32(event.internalData[0]),
                        data2: UInt32(event.internalData[1]),

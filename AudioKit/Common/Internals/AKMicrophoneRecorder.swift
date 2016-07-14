@@ -31,7 +31,7 @@ public class AKMicrophoneRecorder {
 
 
             //try recordingSession.setCategory(AVAudioSessionCategoryPlayAndRecord, withOptions:AVAudioSessionCategoryOptions.DefaultToSpeaker)
-            try AKSettings.setSessionCategory(AKSettings.SessionCategory.PlayAndRecord, withOptions:AVAudioSessionCategoryOptions.DefaultToSpeaker)
+            try AKSettings.setSessionCategory(AKSettings.SessionCategory.PlayAndRecord, withOptions:AVAudioSessionCategoryOptions.defaultToSpeaker)
 
             try recordingSession.setActive(true)
         } catch {
@@ -39,12 +39,12 @@ public class AKMicrophoneRecorder {
         }
         #endif
 
-        try! internalRecorder = AVAudioRecorder(URL: file.url, settings: settings)
+        try! internalRecorder = AVAudioRecorder(url: file.url, settings: settings)
     }
 
     /// Record audio
     public func record() {
-        if internalRecorder.recording == false {
+        if internalRecorder.isRecording == false {
             internalRecorder.prepareToRecord()
             internalRecorder.record()
         }
@@ -52,7 +52,7 @@ public class AKMicrophoneRecorder {
 
     /// Stop recording
     public func stop() {
-        if internalRecorder.recording == true {
+        if internalRecorder.isRecording == true {
             internalRecorder.stop()
         }
     }

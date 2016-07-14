@@ -60,7 +60,7 @@ extension Double {
     ///   - taper: For taper > 0, there is an algebraic curve, taper = 1 is linear, and taper < 0 is exponential
     ///
     public func normalized(
-        minimum: Double,
+        _ minimum: Double,
                 maximum: Double,
                 taper: Double) -> Double {
 
@@ -81,7 +81,7 @@ extension Double {
     ///   - taper: For taper > 0, there is an algebraic curve, taper = 1 is linear, and taper < 0 is exponential
     ///
     public mutating func normalize(_ minimum: Double, maximum: Double, taper: Double) {
-        self = self.normalized(minimum: minimum, maximum: maximum, taper: taper)
+        self = self.normalized(minimum, maximum: maximum, taper: taper)
     }
 
     /// Return a value on [0, 1] to a [minimum, maximum] range, according to a taper
@@ -92,9 +92,9 @@ extension Double {
     ///   - taper: For taper > 0, there is an algebraic curve, taper = 1 is linear, and taper < 0 is exponential
     ///
     public func denormalized(
-        minimum: Double,
-                maximum: Double,
-                taper: Double) -> Double {
+            minimum: Double,
+            maximum: Double,
+            taper: Double) -> Double {
 
         // Avoiding division by zero in this trivial case
         if minimum == maximum {
@@ -158,7 +158,7 @@ extension Int {
     ///
     /// - parameter aRef: Reference frequency of A Note (Default: 440Hz)
     ///
-    public func frequencyToMIDINote(aRef: Double = 440.0) -> Double {
+    public func frequencyToMIDINote(_ aRef: Double = 440.0) -> Double {
         return 69 + 12*log2(Double(self)/aRef)
     }
 }
@@ -170,7 +170,7 @@ extension Double {
     ///
     /// - parameter aRef: Reference frequency of A Note (Default: 440Hz)
     ///
-    public func frequencyToMIDINote(aRef: Double = 440.0) -> Double {
+    public func frequencyToMIDINote(_ aRef: Double = 440.0) -> Double {
         return 69 + 12*log2(self/aRef)
     }
 

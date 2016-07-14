@@ -106,7 +106,7 @@ public class AKPolyphonicInstrument: AKNode {
     ///   - noteNumber: MIDI Note Number
     ///   - velocity: MIDI Velocity (0-127)
     ///
-    public func play(noteNumber noteNumber: MIDINoteNumber, velocity: MIDIVelocity) {
+    public func play(noteNumber: MIDINoteNumber, velocity: MIDIVelocity) {
         if let voice = availableVoices.popLast() {
             activeVoices.append(voice)
             activeNotes.append(noteNumber)
@@ -118,12 +118,12 @@ public class AKPolyphonicInstrument: AKNode {
     ///
     /// - parameter noteNumber: MIDI Note Number
     ///
-    public func stop(noteNumber noteNumber: MIDINoteNumber) {
-        if let index  = activeNotes.indexOf(noteNumber) {
-            let voice = activeVoices.removeAtIndex(index)
+    public func stop(noteNumber: MIDINoteNumber) {
+        if let index  = activeNotes.index(of: noteNumber) {
+            let voice = activeVoices.remove(at: index)
             voice.stop()
-            availableVoices.insert(voice, atIndex: 0)
-            activeNotes.removeAtIndex(index)
+            availableVoices.insert(voice, at: 0)
+            activeNotes.remove(at: index)
         }
     }
 
@@ -134,7 +134,7 @@ public class AKPolyphonicInstrument: AKNode {
     ///   - noteNumber: MIDI Note Number
     ///   - velocity: MIDI Velocity (0-127)
     ///
-    public func play(voice voice: AKVoice, noteNumber: MIDINoteNumber, velocity: MIDIVelocity) {
+    public func play(voice: AKVoice, noteNumber: MIDINoteNumber, velocity: MIDIVelocity) {
         // Override in subclass
         print("Voice playing is \(voice) - noteNumber: \(noteNumber) - velocity: \(velocity)")
     }
@@ -145,7 +145,7 @@ public class AKPolyphonicInstrument: AKNode {
     ///   - voice: Voice to stop
     ///   - noteNumber: MIDI Note Number
     ///
-    public func stop(voice voice: AKVoice, noteNumber: MIDINoteNumber) {
+    public func stop(voice: AKVoice, noteNumber: MIDINoteNumber) {
         /// Override in subclass
         print("Stopping voice\(voice) - noteNumber: \(noteNumber)")
     }

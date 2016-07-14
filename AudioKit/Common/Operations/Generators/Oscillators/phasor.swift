@@ -18,7 +18,7 @@ extension AKOperation {
     ///   - phase: Initial phase (Default: 0)
     ///
     public static func phasor(
-        frequency: AKParameter = 1,
+        _ frequency: AKParameter = 1,
         phase: Double = 0
         ) -> AKOperation {
             return AKOperation("(\(frequency) \(phase) phasor)")

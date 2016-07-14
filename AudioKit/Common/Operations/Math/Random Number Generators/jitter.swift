@@ -19,7 +19,7 @@ extension AKOperation {
     ///   - maximumFrequency: The maximum frequency of change in Hz. (Default: 4)
     ///
     public static func jitter(
-        amplitude: AKParameter = 0.5,
+        _ amplitude: AKParameter = 0.5,
         minimumFrequency: AKParameter = 0.5,
         maximumFrequency: AKParameter = 4
         ) -> AKOperation {

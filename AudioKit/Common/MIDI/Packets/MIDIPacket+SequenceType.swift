@@ -18,13 +18,13 @@
  // message is a Message
  }
  */
-extension MIDIPacket: SequenceType {
+extension MIDIPacket: Sequence {
     /// Generate a midi packet
-    public func generate() -> AnyGenerator<AKMIDIEvent> {
+    public func makeIterator() -> AnyIterator<AKMIDIEvent> {
         let generator = generatorForTuple(self.data)
         var index: UInt16 = 0
         
-        return AnyGenerator {
+        return AnyIterator {
             if index >= self.length {
                 return nil
             }
@@ -99,7 +99,7 @@ typealias AKRawMIDIPacket = (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UI
 
 
 /// The returned generator will enumerate each value of the provided tuple.
-func generatorForTuple(tuple: AKRawMIDIPacket) -> AnyGenerator<Any> {
+func generatorForTuple(_ tuple: AKRawMIDIPacket) -> AnyIterator<Any> {
     let children = Mirror(reflecting: tuple).children
-    return AnyGenerator(children.generate().lazy.map { $0.value }.generate())
+    return AnyIterator(children.makeIterator().lazy.map { $0.value }.makeIterator())
 }

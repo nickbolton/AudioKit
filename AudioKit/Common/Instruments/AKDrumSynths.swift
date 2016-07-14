@@ -27,7 +27,7 @@ public class AKSynthKick: AKPolyphonicInstrument {
     ///   - noteNumber: MIDI Note Number
     ///   - velocity: MIDI Velocity (0-127)
     ///
-    override public func play(voice voice: AKVoice, noteNumber: MIDINoteNumber, velocity: MIDIVelocity) {
+    override public func play(voice: AKVoice, noteNumber: MIDINoteNumber, velocity: MIDIVelocity) {
         voice.start()
     }
 
@@ -37,7 +37,7 @@ public class AKSynthKick: AKPolyphonicInstrument {
     ///   - voice: Voice to stop
     ///   - noteNumber: MIDI Note Number
     ///
-    override public func stop(voice voice: AKVoice, noteNumber: MIDINoteNumber) {
+    override public func stop(voice: AKVoice, noteNumber: MIDINoteNumber) {
         // do nothing
     }
 }
@@ -105,7 +105,7 @@ public class AKSynthSnare: AKPolyphonicInstrument {
     ///   - noteNumber: MIDI Note Number
     ///   - velocity: MIDI Velocity (0-127)
     ///
-    override public func play(voice voice: AKVoice, noteNumber: MIDINoteNumber, velocity: MIDIVelocity) {
+    override public func play(voice: AKVoice, noteNumber: MIDINoteNumber, velocity: MIDIVelocity) {
         let tempVoice = voice as! AKSynthSnareVoice
         tempVoice.cutoff = (Double(velocity)/127.0 * 1600.0) + 300.0
         voice.start()
@@ -117,7 +117,7 @@ public class AKSynthSnare: AKPolyphonicInstrument {
     ///   - voice: Voice to stop
     ///   - noteNumber: MIDI Note Number
     ///
-    override public func stop(voice voice: AKVoice, noteNumber: MIDINoteNumber) {
+    override public func stop(voice: AKVoice, noteNumber: MIDINoteNumber) {
         // do nothing
     }
 }

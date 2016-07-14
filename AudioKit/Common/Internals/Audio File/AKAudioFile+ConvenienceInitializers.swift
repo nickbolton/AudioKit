@@ -24,19 +24,19 @@ extension AKAudioFile {
      
      */
     public convenience init(readFileName name: String,
-                                         baseDir: BaseDirectory = .Resources) throws {
+                                         baseDir: BaseDirectory = .resources) throws {
         
         let filePath: String
         let fileNameWithExtension = name
         
         switch baseDir {
-        case .Temp:
+        case .temp:
             filePath =  (NSTemporaryDirectory() as String) + name
-        case .Documents:
-            filePath =  (NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0]) + "/" + name
-        case .Resources:
-            func resourcePath(name: String?) -> String? {
-                return NSBundle.mainBundle().pathForResource(name, ofType: "")
+        case .documents:
+            filePath =  (NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]) + "/" + name
+        case .resources:
+            func resourcePath(_ name: String?) -> String? {
+                return Bundle.main.pathForResource(name, ofType: "")
             }
             let path =  resourcePath(name)
             if path == nil {
@@ -46,7 +46,7 @@ extension AKAudioFile {
             filePath = path!
             
         }
-        let fileUrl = NSURL(fileURLWithPath: filePath)
+        let fileUrl = URL(fileURLWithPath: filePath)
         do {
             try self.init(forReading: fileUrl)
         } catch let error as NSError {
@@ -89,39 +89,39 @@ extension AKAudioFile {
      let recordFile = AKAudioFile()
      
      */
-    public convenience init(writeIn baseDir: BaseDirectory = .Temp,
+    public convenience init(writeIn baseDir: BaseDirectory = .temp,
                                     name: String = "") throws {
         
         let fileNameWithExtension: String
         // Create a unique file name if fileName == ""
         if name == "" {
-            fileNameWithExtension =  NSUUID().UUIDString + ".caf"
+            fileNameWithExtension =  UUID().uuidString + ".caf"
         } else {
             fileNameWithExtension = name + ".caf"
         }
         
         var filePath: String
         switch baseDir {
-        case .Temp:
+        case .temp:
             filePath =  (NSTemporaryDirectory() as String) + "/" + fileNameWithExtension
-        case .Documents:
-            filePath =  (NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0]) + "/" + fileNameWithExtension
-        case .Resources:
+        case .documents:
+            filePath =  (NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]) + "/" + fileNameWithExtension
+        case .resources:
             print( "ERROR AKAudioFile: cannot create a file in applications resources!...")
             throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
         }
         
-        let nsurl = NSURL(string: filePath)
+        let nsurl = URL(string: filePath)
         guard nsurl != nil else {
             print( "ERROR AKAudioFile: directory \"\(filePath)\" isn't valid!...")
             throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
         }
         
         // Directory exists ?
-        let directoryPath = nsurl!.URLByDeletingLastPathComponent
+        let directoryPath = try! nsurl!.deletingLastPathComponent()
         
-        let fileManager = NSFileManager.defaultManager()
-        if fileManager.fileExistsAtPath((directoryPath?.absoluteString)!) == false {
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: (directoryPath.absoluteString)!) == false {
             print( "ERROR AKAudioFile: directory \"\(directoryPath)\" doesn't exists!...")
             throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
         }
@@ -129,7 +129,7 @@ extension AKAudioFile {
         // AVLinearPCMIsNonInterleaved cannot be set to false (ignored but throw a warning)
         var  fixedSettings =  AKSettings.audioFormat.settings
         
-        fixedSettings[ AVLinearPCMIsNonInterleaved] =  NSNumber(bool: false)
+        fixedSettings[ AVLinearPCMIsNonInterleaved] =  NSNumber(value: false)
         
         do {
             try self.init(forWriting: nsurl!, settings: fixedSettings)
@@ -156,7 +156,7 @@ extension AKAudioFile {
      Returns a .caf AKAudioFile set to AudioKit settings (32 bits float @ 44100 Hz)
      */
     public convenience init(createFileFromFloats floatsArrays: [[Float]],
-                                                 baseDir: BaseDirectory = .Temp,
+                                                 baseDir: BaseDirectory = .temp,
                                                  name: String = "") throws {
         
         let channelCount = floatsArrays.count
@@ -169,14 +169,14 @@ extension AKAudioFile {
         
         // create buffer for floats
         let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: AVAudioChannelCount (channelCount))
-        let buffer = AVAudioPCMBuffer(PCMFormat: format, frameCapacity:  AVAudioFrameCount(floatsArrays[0].count))
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity:  AVAudioFrameCount(floatsArrays[0].count))
         
         // Fill the buffers
         
         for channel in 0..<channelCount {
-            let channelNData = buffer.floatChannelData[channel]
+            let channelNData = buffer.floatChannelData?[channel]
             for f in 0..<Int(buffer.frameCapacity) {
-                channelNData[f] = floatsArrays[channel][f]
+                channelNData?[f] = floatsArrays[channel][f]
             }
         }
         
@@ -185,7 +185,7 @@ extension AKAudioFile {
         
         // Write the buffer in file
         do {
-            try self.writeFromBuffer(buffer)
+            try self.write(from: buffer)
         } catch let error as NSError {
             print( "ERROR AKAudioFile: cannot writeFromBuffer Error: \(error)")
             throw error
@@ -207,7 +207,7 @@ extension AKAudioFile {
      */
     
     public convenience init(fromAVAudioPCMBuffer buffer: AVAudioPCMBuffer,
-                                                 baseDir: BaseDirectory = .Temp,
+                                                 baseDir: BaseDirectory = .temp,
                                                  name: String = "") throws {
         
         try self.init(writeIn: baseDir,
@@ -215,7 +215,7 @@ extension AKAudioFile {
         
         // Write the buffer in file
         do {
-            try self.writeFromBuffer(buffer)
+            try self.write(from: buffer)
         } catch let error as NSError {
             print( "ERROR AKAudioFile: cannot writeFromBuffer Error: \(error)")
             throw error

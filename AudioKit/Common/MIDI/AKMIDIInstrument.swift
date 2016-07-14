@@ -42,7 +42,7 @@ public class AKMIDIInstrument: AKNode, AKMIDIListener {
     ///   - midiClient: A refernce to the midi client
     ///   - name: Name to connect with
     ///
-    public func enableMIDI(midiClient: MIDIClientRef, name: String) {
+    public func enableMIDI(_ midiClient: MIDIClientRef, name: String) {
         var result: OSStatus
         result = MIDIDestinationCreateWithBlock(midiClient, name, &midiIn, MyMIDIReadBlock)
         CheckError(result)
@@ -57,7 +57,7 @@ public class AKMIDIInstrument: AKNode, AKMIDIListener {
     ///   - velocity:   MIDI velocity
     ///   - channel:    MIDI channel
     ///
-    public func receivedMIDINoteOn(noteNumber: MIDINoteNumber,
+    public func receivedMIDINoteOn(_ noteNumber: MIDINoteNumber,
                                    velocity: MIDIVelocity,
                                    channel: Int) {
         if velocity > 0 {
@@ -76,7 +76,7 @@ public class AKMIDIInstrument: AKNode, AKMIDIListener {
     ///   - velocity:   Velocity at which to play the note (0 - 127)
     ///   - channel:    Channel on which to play the note
     ///
-    public func start(noteNumber noteNumber: MIDINoteNumber,
+    public func start(noteNumber: MIDINoteNumber,
                                  velocity: MIDIVelocity,
                                  channel: Int) {
         internalInstrument!.play(noteNumber: noteNumber, velocity: velocity)
@@ -88,14 +88,14 @@ public class AKMIDIInstrument: AKNode, AKMIDIListener {
     ///   - noteNumber: Note number to stop
     ///   - channel:    Channel on which to stop the note
     ///
-    public func stop(noteNumber noteNumber: MIDINoteNumber, channel: Int) {
+    public func stop(noteNumber: MIDINoteNumber, channel: Int) {
         internalInstrument!.stop(noteNumber: noteNumber)
     }
     
     // MARK: - Private functions
     
     // Send MIDI data to the audio unit
-    func handleMIDI(data1 data1: UInt32, data2: UInt32, data3: UInt32) {
+    func handleMIDI(data1: UInt32, data2: UInt32, data3: UInt32) {
         let status = data1 >> 4
         let channel = data1 & 0xF
         if(Int(status) == AKMIDIStatus.NoteOn.rawValue && data3 > 0) {
@@ -108,14 +108,14 @@ public class AKMIDIInstrument: AKNode, AKMIDIListener {
     }
 
     private func MyMIDIReadBlock(
-        packetList: UnsafePointer<MIDIPacketList>,
+        _ packetList: UnsafePointer<MIDIPacketList>,
         srcConnRefCon: UnsafeMutablePointer<Void>) -> Void {
-            let packetCount = Int(packetList.memory.numPackets)
-            let packet = packetList.memory.packet as MIDIPacket
-            var packetPointer: UnsafeMutablePointer<MIDIPacket> = UnsafeMutablePointer.alloc(1)
-            packetPointer.initialize(packet)
+            let packetCount = Int(packetList.pointee.numPackets)
+            let packet = packetList.pointee.packet as MIDIPacket
+            var packetPointer: UnsafeMutablePointer<MIDIPacket> = UnsafeMutablePointer(allocatingCapacity: 1)
+            packetPointer.initialize(with: packet)
             for _ in 0 ..< packetCount {
-                let event = AKMIDIEvent(packet: packetPointer.memory)
+                let event = AKMIDIEvent(packet: packetPointer.pointee)
                 //the next line is unique for midiInstruments - otherwise this function is the same as AKMIDI
                 handleMIDI(data1: UInt32(event.internalData[0]),
                            data2: UInt32(event.internalData[1]),

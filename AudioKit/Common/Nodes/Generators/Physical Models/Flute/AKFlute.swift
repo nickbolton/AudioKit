@@ -136,7 +136,7 @@ public class AKFlute: AKVoice {
     ///   - frequency: Frequency in Hz
     /// - amplitude amplitude: Volume
     ///
-    public func trigger(frequency: Double, amplitude: Double = 1) {
+    public func trigger(_ frequency: Double, amplitude: Double = 1) {
         self.frequency = frequency
         self.amplitude = amplitude
         self.internalAU!.start()

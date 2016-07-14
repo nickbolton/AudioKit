@@ -134,10 +134,10 @@ public class AKNodeRecorder {
             let recordingBufferLength:AVAudioFrameCount = AKSettings.recordingBufferLength.samplesCount
 
             print ("recording")
-            node!.avAudioNode.installTapOnBus(0, bufferSize: recordingBufferLength, format: internalAudioFile.processingFormat, block: { (buffer: AVAudioPCMBuffer!, time: AVAudioTime!) -> Void in
+            node!.avAudioNode.installTap(onBus: 0, bufferSize: recordingBufferLength, format: internalAudioFile.processingFormat, block: { (buffer: AVAudioPCMBuffer!, time: AVAudioTime!) -> Void in
                 do {
                     buffer.frameLength = recordingBufferLength
-                    try self.internalAudioFile.writeFromBuffer(buffer)
+                    try self.internalAudioFile.write(from: buffer)
                     self.recording = true
                     print("writing ( file duration:  \(self.internalAudioFile.duration) seconds)")
                 } catch let error as NSError {
@@ -159,7 +159,7 @@ public class AKNodeRecorder {
 
         recording = false
         if  node != nil {
-            node!.avAudioNode.removeTapOnBus(0)
+            node!.avAudioNode.removeTap(onBus: 0)
             print("Recording Stopped.")
         } else {
             print ("AKNodeRecorder Error: input node is not available")
@@ -171,12 +171,12 @@ public class AKNodeRecorder {
     public func reset() throws {
 
         // Delete the current file audio file
-        let fileManager = NSFileManager.defaultManager()
+        let fileManager = FileManager.default
         let url = internalAudioFile.url
         let settings = internalAudioFile.processingFormat.settings
 
         do {
-            try fileManager.removeItemAtPath(internalAudioFile.url.absoluteString)
+            try fileManager.removeItem(atPath: internalAudioFile.url.absoluteString!)
         } catch let error as NSError {
             print ("AKNodeRecorder Error: cannot delete Recording file:  \(internalAudioFile.fileNamePlusExtension)")
             throw error

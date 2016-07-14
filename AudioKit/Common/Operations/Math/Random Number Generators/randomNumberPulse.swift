@@ -19,7 +19,7 @@ extension AKOperation {
     ///   - updateFrequency: Frequency of randomization (in Hz) (Default: 10)
     ///
     public static func randomNumberPulse(
-        minimum: AKParameter = 0,
+        _ minimum: AKParameter = 0,
         maximum: AKParameter = 1,
         updateFrequency: AKParameter = 10
         ) -> AKOperation {

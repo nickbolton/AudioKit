@@ -26,7 +26,7 @@ extension AKAudioFile {
     - Throws: NSError if failed .
      
     - Returns: An AKAudioFile, or nil if init failed.*/
-    public func normalize( baseDir: BaseDirectory = .Temp,
+    public func normalize( _ baseDir: BaseDirectory = .temp,
                            name: String = "", newMaxLevel: Float = 0.0 ) throws -> AKAudioFile {
         
         let level = self.maxLevel
@@ -68,7 +68,7 @@ extension AKAudioFile {
      - Throws: NSError if failed .
      
      - Returns: An AKAudioFile, or nil if init failed.*/
-    public func reverse( baseDir: BaseDirectory = .Temp,
+    public func reverse( _ baseDir: BaseDirectory = .temp,
                          name: String = "" ) throws -> AKAudioFile {
         
         var outputFile = try AKAudioFile (writeIn: baseDir, name: name)
@@ -82,7 +82,7 @@ extension AKAudioFile {
         
         var newArrays: [[Float]] = []
         for array in arrays {
-            newArrays.append(Array(array.reverse()))
+            newArrays.append(Array(array.reversed()))
         }
         outputFile = try AKAudioFile(createFileFromFloats: newArrays, baseDir: baseDir, name: name)
         return try AKAudioFile(forReading: outputFile.url)
@@ -99,8 +99,8 @@ extension AKAudioFile {
      - Throws: NSError if failed .
      
      - Returns: An AKAudioFile, or nil if init failed.*/
-    public func append( file: AKAudioFile,
-                        baseDir: BaseDirectory = .Temp,
+    public func append( _ file: AKAudioFile,
+                        baseDir: BaseDirectory = .temp,
                         name: String  = "") throws -> AKAudioFile {
         
         if self.fileFormat != file.fileFormat {
@@ -115,7 +115,7 @@ extension AKAudioFile {
         
         // Write the buffer in file
         do {
-            try outputFile.writeFromBuffer(myBuffer)
+            try outputFile.write(from: myBuffer)
         } catch let error as NSError {
             print( "ERROR AKAudioFile: cannot writeFromBuffer Error: \(error)")
             throw error
@@ -124,7 +124,7 @@ extension AKAudioFile {
         let appendedBuffer = file.pcmBuffer
         
         do {
-            try outputFile.writeFromBuffer(appendedBuffer)
+            try outputFile.write(from: appendedBuffer)
         } catch let error as NSError {
             print( "ERROR AKAudioFile: cannot writeFromBuffer Error: \(error)")
             throw error
@@ -146,7 +146,7 @@ extension AKAudioFile {
      - Throws: NSError if failed .
      
      - Returns: An AKAudioFile, or nil if init failed.*/
-    public func extract(from: Int64 = 0, to: Int64 = 0, baseDir: BaseDirectory = .Temp,
+    public func extract(_ from: Int64 = 0, to: Int64 = 0, baseDir: BaseDirectory = .temp,
                         name: String = "") throws -> AKAudioFile {
 
         let fixedFrom = abs(from)
@@ -182,8 +182,8 @@ extension AKAudioFile {
      - Throws: NSError if failed .
      
      - Returns: An AKAudioFile, or nil if init failed.*/
-    static public func silent(samples: Int64,
-                              baseDir: BaseDirectory = .Temp,
+    static public func silent(_ samples: Int64,
+                              baseDir: BaseDirectory = .temp,
                               name: String = "") throws -> AKAudioFile {
         
         if samples < 0 {
@@ -195,7 +195,7 @@ extension AKAudioFile {
             return try AKAudioFile(forReading: emptyFile.url)
         }
         
-        let array = [Float](count:Int(samples), repeatedValue: 0.0)
+        let array = [Float](repeating: 0.0, count: Int(samples))
         let silentFile = try AKAudioFile(createFileFromFloats: [array, array], baseDir: baseDir, name: name)
         
         return try AKAudioFile(forReading: silentFile.url)

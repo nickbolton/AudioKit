@@ -111,33 +111,33 @@ public class AKEqualizerFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKEqualizerFilterAudioUnit.self,
-            asComponentDescription: description,
+            as: description,
             name: "Local AKEqualizerFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
+        AVAudioUnit.instantiate(with: description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKEqualizerFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKEqualizerFilterAudioUnit
 
-            AudioKit.engine.attachNode(self.avAudioNode)
+            AudioKit.engine.attach(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        centerFrequencyParameter = tree.valueForKey("centerFrequency") as? AUParameter
-        bandwidthParameter       = tree.valueForKey("bandwidth")       as? AUParameter
-        gainParameter            = tree.valueForKey("gain")            as? AUParameter
-
-        token = tree.tokenByAddingParameterObserver {
+        centerFrequencyParameter = tree.value(forKey: "centerFrequency") as? AUParameter
+        bandwidthParameter       = tree.value(forKey: "bandwidth")       as? AUParameter
+        gainParameter            = tree.value(forKey: "gain")            as? AUParameter
+        
+        let observer: AUParameterObserver = {
             address, value in
-
-            dispatch_async(dispatch_get_main_queue()) {
+            
+            let executionBlock = {
                 if address == self.centerFrequencyParameter!.address {
                     self.centerFrequency = Double(value)
                 } else if address == self.bandwidthParameter!.address {
@@ -146,8 +146,11 @@ public class AKEqualizerFilter: AKNode, AKToggleable {
                     self.gain = Double(value)
                 }
             }
+
+            DispatchQueue.main.async(execute: executionBlock)
         }
 
+        token = tree.token(byAddingParameterObserver: observer)
         internalAU?.centerFrequency = Float(centerFrequency)
         internalAU?.bandwidth = Float(bandwidth)
         internalAU?.gain = Float(gain)

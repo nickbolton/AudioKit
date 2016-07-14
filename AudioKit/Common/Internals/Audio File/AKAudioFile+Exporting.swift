@@ -84,14 +84,14 @@ extension AKAudioFile {
      
      */
     public func export(
-        name: String,
+        _ name: String,
         ext: ExportFormat,
         baseDir: BaseDirectory,
         callBack: (AKCallback),
         inTime: Double = 0,
         outTime: Double  = 0 ) throws -> ExportSession {
         
-        let fromFileExt = fileExt.lowercaseString
+        let fromFileExt = fileExt.lowercased()
         
         // Only mp4, m4a, .wav, .aif can be exported...
         guard   ExportFormat.arrayOfStrings.contains(fromFileExt) else {
@@ -174,7 +174,7 @@ extension AKAudioFile {
             self.callBack = callBack
             
             let assetUrl = file.url
-            let asset  = AVURLAsset(URL: assetUrl)
+            let asset  = AVURLAsset(url: assetUrl)
             
             // let asset = file.avAsset
             
@@ -195,34 +195,34 @@ extension AKAudioFile {
             
             var filePath: String
             switch baseDir {
-            case .Temp:
+            case .temp:
                 filePath =  (NSTemporaryDirectory() as String) + fileName + "." + String(outputFileExtension)
-            case .Documents:
-                filePath =  (NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0]) +  "/" + fileName + "." + String(outputFileExtension)
-            case .Resources:
+            case .documents:
+                filePath =  (NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]) +  "/" + fileName + "." + String(outputFileExtension)
+            case .resources:
                 print( "ERROR AKAudioFile export: cannot create a file in applications resources!...")
                 throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
             }
             
-            let nsurl = NSURL(string: filePath)
+            let nsurl = URL(string: filePath)
             guard nsurl != nil else {
                 print( "ERROR AKAudioFile export: directory \"\(filePath)\" isn't valid!...")
                 throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
             }
-            let directoryPath = nsurl!.URLByDeletingLastPathComponent
+            let directoryPath = try! nsurl!.deletingLastPathComponent()
             // Check if directory exists
-            let fileManager = NSFileManager.defaultManager()
-            if fileManager.fileExistsAtPath((directoryPath?.absoluteString)!) == false {
+            let fileManager = FileManager.default
+            if fileManager.fileExists(atPath: (directoryPath.absoluteString)!) == false {
                 print( "ERROR AKAudioFile export: directory \"\(directoryPath)\" doesn't exists!...")
                 throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotCreateFile, userInfo: nil)
             }
             
             // Check if out file exists
-            if fileManager.fileExistsAtPath((nsurl?.absoluteString)!) {
+            if fileManager.fileExists(atPath: (nsurl?.absoluteString)!) {
                 // Then delete file
                 print ("AKAudioFile export: Output file already exists, trying to delete...")
                 do {
-                    try fileManager.removeItemAtPath((nsurl?.absoluteString)!)
+                    try fileManager.removeItem(atPath: (nsurl?.absoluteString)!)
                 } catch let error as NSError {
                     print ("Error !!! AKAudioFile: couldn't delete file \"\(nsurl!)\" !...")
                     print(error.localizedDescription)
@@ -231,7 +231,7 @@ extension AKAudioFile {
                 print ("AKAudioFile export: Output file has been deleted !")
             }
             
-            exporter.outputURL = NSURL.fileURLWithPath(filePath)
+            exporter.outputURL = URL.fileURL(withPath: filePath)
             // Sets the output file encoding (avoid .wav encoded as m4a...)
             exporter.outputFileType = outputFileExtension.UTI as String
             
@@ -257,21 +257,21 @@ extension AKAudioFile {
             exporter.timeRange = timeRange
             
             // Everything is fine, we can export...
-            exporter.exportAsynchronouslyWithCompletionHandler(internalCompletionHandler)
+            exporter.exportAsynchronously(completionHandler: internalCompletionHandler)
         }
         
         private func internalCompletionHandler () {
             switch exporter.status {
-            case  AVAssetExportSessionStatus.Failed:
+            case  AVAssetExportSessionStatus.failed:
                 print("ERROR AKAudioFile: Export Failed!...")
                 print("Error: \(exporter.error)")
-            case AVAssetExportSessionStatus.Cancelled:
+            case AVAssetExportSessionStatus.cancelled:
                 print("ERROR AKAudioFile: Export Cancelled!...")
                 print("Error: \(exporter.error)")
             default:
                 // Export succeeded !
                 // We create an AKAudioFile from the exported audioFile
-                let url = NSURL(string: exporter.outputURL!.path!)
+                let url = URL(string: exporter.outputURL!.path!)
                 do {
                     outputAudioFile = try AKAudioFile(forReading: url!)
                 } catch let error as NSError {
@@ -285,12 +285,12 @@ extension AKAudioFile {
         
         /// True if export succeeded...
         public var succeeded: Bool {
-            return exporter.status == .Completed
+            return exporter.status == .completed
         }
         
         /// True if export failed...
         public var failed: Bool {
-            return exporter.status == .Failed
+            return exporter.status == .failed
         }
         
         /** status returns current exporter status:

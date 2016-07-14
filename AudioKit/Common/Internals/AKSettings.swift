@@ -27,14 +27,14 @@ import AVFoundation
     /// from Shortest: 2 power 5 samples (32 samples = 0.7 ms @ 44100 kz)
     /// to Longest: 2 power 12 samples (4096 samples = 92.9 ms @ 44100 Hz)
     public enum BufferLength: Int {
-        case Shortest = 5
-        case VeryShort = 6
-        case Short = 7
-        case Medium = 8
-        case Long = 9
-        case VeryLong = 10
-        case Huge = 11
-        case Longest = 12
+        case shortest = 5
+        case veryShort = 6
+        case short = 7
+        case medium = 8
+        case long = 9
+        case veryLong = 10
+        case huge = 11
+        case longest = 12
         
         /// The buffer Length expressed as number of samples
         var samplesCount: AVAudioFrameCount {
@@ -75,11 +75,11 @@ import AVFoundation
     
     /// AudioKit buffer length is set using AKSettings.BufferLength
     /// default is .Medium for a buffer set to 2 power 8 = 256 samples (58 ms)
-    public static var bufferLength: BufferLength = .Longest
+    public static var bufferLength: BufferLength = .longest
     
     /// AudioKit recording buffer length is set using AKSettings.BufferLength
     /// default is .Medium for a buffer set to 2 power 8 = 256 samples (58 ms)
-    public static var recordingBufferLength: BufferLength = .Longest
+    public static var recordingBufferLength: BufferLength = .longest
     
     /// Enable AudioKit AVAudioSession Category Management
     public static var disableAVAudioSessionCategoryManagement: Bool = false
@@ -90,7 +90,7 @@ import AVFoundation
     public static let session = AVAudioSession.sharedInstance()
     
     public static func setSessionCategory(
-        category: SessionCategory,
+        _ category: SessionCategory,
         withOptions options: AVAudioSessionCategoryOptions? = nil ) throws {
         
         if AKSettings.disableAVAudioSessionCategoryManagement == false {
@@ -99,7 +99,7 @@ import AVFoundation
             // Category
             if options != nil {
                 do {
-                    try session.setCategory(category.rawValue, withOptions: options!)
+                    try session.setCategory(category.rawValue, with: options!)
                 } catch let error as NSError {
                     print ("AKAsettings Error: Cannot set AVAudioSession Category to \(String(category)) with options: \(String(options!))")
                     print ("AKAsettings Error: \(error))")

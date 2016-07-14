@@ -28,21 +28,21 @@ public class AKAudioFile: AVAudioFile {
      */
     public enum BaseDirectory {
         /// Temporary directory
-        case Temp
+        case temp
         
         /// Documents directory
-        case Documents
+        case documents
         
         /// Resources directory
-        case Resources
+        case resources
     }
     
     // MARK: - private vars
     
     // Used for exporting, can be accessed with public .avAsset property
     private lazy var internalAVAsset: AVURLAsset = {
-        let avAssetUrl = NSURL(fileURLWithPath:self.url.absoluteString)
-        return  AVURLAsset(URL: avAssetUrl)
+        let avAssetUrl = URL(fileURLWithPath:self.url.absoluteString!)
+        return  AVURLAsset(url: avAssetUrl)
     }()
 
 
@@ -79,14 +79,14 @@ public class AKAudioFile: AVAudioFile {
     /// true if Audio Samples are interleaved
     public var interleaved: Bool {
         get {
-            return self.fileFormat.interleaved
+            return self.fileFormat.isInterleaved
         }
     }
 
     /// true if file format is "deinterleaved native-endian float (AVAudioPCMFormatFloat32)", otherwise false
     public var standard: Bool {
         get {
-            return self.fileFormat.standard
+            return self.fileFormat.isStandard
         }
     }
 
@@ -118,9 +118,9 @@ public class AKAudioFile: AVAudioFile {
     }
 
     /// the directory path as a NSURL object
-    public var directoryPath: NSURL {
+    public var directoryPath: URL {
         get {
-            return self.url.URLByDeletingLastPathComponent!
+            return try! self.url.deletingLastPathComponent()
         }
     }
 
@@ -134,7 +134,7 @@ public class AKAudioFile: AVAudioFile {
     /// the file name without extension as a String
     public var fileName: String {
         get {
-            return (self.url.URLByDeletingPathExtension?.lastPathComponent!)!
+            return (try! self.url.deletingPathExtension().lastPathComponent!)
         }
     }
 
@@ -169,7 +169,7 @@ public class AKAudioFile: AVAudioFile {
             let buf = self.pcmBuffer
 
             for channel in 0..<self.channelCount {
-                let floatArray = Array(UnsafeBufferPointer(start: buf.floatChannelData[Int(channel)], count:Int(buf.frameLength)))
+                let floatArray = Array(UnsafeBufferPointer(start: buf.floatChannelData?[Int(channel)], count:Int(buf.frameLength)))
                 arrays.append(floatArray)
             }
         } else {
@@ -183,10 +183,10 @@ public class AKAudioFile: AVAudioFile {
     /// returns audio data as an AVAudioPCMBuffer
     public lazy var pcmBuffer: AVAudioPCMBuffer = {
 
-        let buffer =  AVAudioPCMBuffer(PCMFormat: self.processingFormat, frameCapacity: (AVAudioFrameCount( self.length)))
+        let buffer =  AVAudioPCMBuffer(pcmFormat: self.processingFormat, frameCapacity: (AVAudioFrameCount( self.length)))
 
         do {
-            try self.readIntoBuffer(buffer)
+            try self.read(into: buffer)
         } catch let error as NSError {
             print ("error cannot readIntBuffer, Error: \(error)")
         }
@@ -204,9 +204,9 @@ public class AKAudioFile: AVAudioFile {
 
         if self.samplesCount > 0 {
             for c in 0..<Int(self.channelCount) {
-                let floats = UnsafeBufferPointer(start: buffer.floatChannelData[c], count:Int(buffer.frameLength))
-                let cmax = floats.maxElement()
-                let cmin = floats.minElement()
+                let floats = UnsafeBufferPointer(start: buffer.floatChannelData?[c], count:Int(buffer.frameLength))
+                let cmax = floats.max()
+                let cmin = floats.min()
 
                 // positive max
                 if cmax != nil {
@@ -237,7 +237,7 @@ public class AKAudioFile: AVAudioFile {
      - Returns: An initialized AKAudioFile object for reading, or nil if init failed.
      
      */
-    public override init(forReading fileURL: NSURL) throws {
+    public override init(forReading fileURL: URL) throws {
         try super.init(forReading: fileURL)
     }
     
@@ -254,7 +254,7 @@ public class AKAudioFile: AVAudioFile {
      - Returns: An initialized AKAudioFile object for reading, or nil if init failed.
      
      */
-    public override init(forReading fileURL: NSURL,
+    public override init(forReading fileURL: URL,
                                     commonFormat format: AVAudioCommonFormat,
                                                  interleaved: Bool) throws {
         
@@ -285,7 +285,7 @@ public class AKAudioFile: AVAudioFile {
      
      */
     
-    public override init(forWriting fileURL: NSURL,
+    public override init(forWriting fileURL: URL,
                                     settings: [String : AnyObject],
                                     commonFormat format: AVAudioCommonFormat,
                                                  interleaved: Bool) throws {
@@ -315,7 +315,7 @@ public class AKAudioFile: AVAudioFile {
     /// with a floating Point encoding. As a consequence, such files will fail to record properly.
     /// So it's better to use .caf (or .aif) files for recording purpose.
     ///
-    public override init(forWriting fileURL: NSURL, settings: [String:AnyObject]) throws {
+    public override init(forWriting fileURL: URL, settings: [String:AnyObject]) throws {
         try super.init(forWriting: fileURL, settings: settings)
     }
 }
