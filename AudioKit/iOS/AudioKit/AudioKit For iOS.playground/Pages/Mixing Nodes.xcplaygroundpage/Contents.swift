@@ -4,20 +4,23 @@
 //:
 //: ## Mixing Nodes
 //: ### So, what about connecting multiple sources to the output instead of feeding operations into each other in sequential order? To do that, you'll need a mixer.
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
 //: This section prepares the players
-let bundle = Bundle.main()
-let drumFile   = bundle.pathForResource("drumloop", ofType: "wav")
-let bassFile   = bundle.pathForResource("bassloop", ofType: "wav")
-let guitarFile = bundle.pathForResource("guitarloop", ofType: "wav")
-let leadFile   = bundle.pathForResource("leadloop", ofType: "wav")
+let drumFile   = try AKAudioFile(readFileName: "drumloop.wav", baseDir: .Resources)
 
-var drums  = AKAudioPlayer(drumFile!)
-var bass   = AKAudioPlayer(bassFile!)
-var guitar = AKAudioPlayer(guitarFile!)
-var lead   = AKAudioPlayer(leadFile!)
+let bassFile   = try AKAudioFile(readFileName: "bassloop.wav", baseDir: .Resources)
+
+let guitarFile   = try AKAudioFile(readFileName: "guitarloop.wav", baseDir: .Resources)
+
+let leadFile   = try AKAudioFile(readFileName: "leadloop.wav", baseDir: .Resources)
+
+
+var drums  = try AKAudioPlayer(file: drumFile)
+var bass   = try AKAudioPlayer(file: bassFile)
+var guitar = try AKAudioPlayer(file: guitarFile)
+var lead   = try AKAudioPlayer(file: leadFile)
 
 drums.looping  = true
 bass.looping   = true
@@ -129,7 +132,7 @@ class PlaygroundView: AKPlaygroundView {
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height: 1000))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

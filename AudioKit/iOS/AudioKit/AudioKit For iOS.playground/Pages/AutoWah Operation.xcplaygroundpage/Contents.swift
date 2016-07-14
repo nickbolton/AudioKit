@@ -3,13 +3,13 @@
 //: ---
 //:
 //: ## AutoWah Operation
-//: 
-import PlaygroundSupport
+//:
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("guitarloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "guitarloop.wav", baseDir: .Resources)
+
+let player = try AKAudioPlayer(file: file)
 player.looping = true
 
 let wahAmount = AKOperation.sineWave(frequency: 0.6).scale(minimum: 1, maximum: 0)
@@ -22,5 +22,5 @@ AudioKit.output = effect
 AudioKit.start()
 player.play()
 
-PlaygroundPage.current.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

@@ -4,12 +4,14 @@
 //:
 //: ## Peak Limiter
 //: ### A peak limiter will set a hard limit on the amplitude of an audio signal. They're espeically useful for any type of live input processing, when you may not be in total control of the audio signal you're recording or processing.
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("drumloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+
+let file = try AKAudioFile(readFileName: "mixloop.wav", baseDir: .Resources)
+
+//: Here we set up a player to the loop the file's playback
+var player = try AKAudioPlayer(file: file)
 player.looping = true
 
 var peakLimiter = AKPeakLimiter(player)
@@ -61,29 +63,29 @@ class PlaygroundView: AKPlaygroundView {
 
     //: Handle UI Events
 
-    func startLoop(_ part: String) {
+    func startLoop(part: String) {
         player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
         player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
@@ -99,7 +101,7 @@ class PlaygroundView: AKPlaygroundView {
     func bypass() {
         peakLimiter.bypass()
     }
-    
+
     func setAttackTime(slider: Slider) {
         peakLimiter.attackTime = Double(slider.value)
         let attackTime = String(format: "%0.3f", peakLimiter.attackTime)
@@ -120,10 +122,10 @@ class PlaygroundView: AKPlaygroundView {
         preGainLabel!.text = "preGain: \(preGain) dB"
         printCode()
     }
-    
+
     func printCode() {
         // Here we're just printing out the preset so it can be copy and pasted into code
-        
+
         print("public func presetXXXXXX() {")
         print("    attackTime = \(String(format: "%0.3f", peakLimiter.attackTime))")
         print("    decayTime = \(String(format: "%0.3f", peakLimiter.decayTime))")
@@ -133,7 +135,7 @@ class PlaygroundView: AKPlaygroundView {
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height: 1000))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

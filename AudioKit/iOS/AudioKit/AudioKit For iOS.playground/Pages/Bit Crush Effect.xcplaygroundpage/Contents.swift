@@ -4,14 +4,14 @@
 //:
 //: ## Bit Crush Effect
 //: ### An audio signal consists of two components, amplitude and frequency. When an analog audio signal is converted to a digial representation, these two components are stored by a bit-depth value, and a sample-rate value. The sample-rate represents the number of samples of audio per second, and the bit-depth represents the number of bits used capture that audio. The bit-depth specifies the dynamic range (the difference between the smallest and loudest audio signal). By changing the bit-depth of an audio file, you can create rather interesting digital distortion effects.
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("drumloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
-player.looping = true
-var bitcrusher = AKBitCrusher(player)
+let file = try? AKAudioFile(readFileName: "drumloop.wav", baseDir: .Resources)
+
+let player = try? AKAudioPlayer(file: file!)
+player!.looping = true
+var bitcrusher = AKBitCrusher(player!)
 
 //: Set the parameters of the bitcrusher here
 bitcrusher.bitDepth = 16
@@ -20,7 +20,7 @@ bitcrusher.sampleRate = 3333
 AudioKit.output = bitcrusher
 AudioKit.start()
 
-player.play()
+player!.play()
 
 class PlaygroundView: AKPlaygroundView {
 
@@ -45,34 +45,34 @@ class PlaygroundView: AKPlaygroundView {
         addSlider(#selector(setSampleRate), value: bitcrusher.sampleRate, minimum: 0, maximum: 16000)
     }
 
-    func startLoop(_ part: String) {
-        player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
-        player.play()
+    func startLoop(part: String) {
+        player!.stop()
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player!.replaceFile(file!)
+        player!.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
     func stop() {
-        player.stop()
+        player!.stop()
     }
 
     func setBitDepth(slider: Slider) {
@@ -88,10 +88,10 @@ class PlaygroundView: AKPlaygroundView {
         sampleRateLabel!.text = "Sample Rate: \(sampleRate)"
         printCode()
     }
-    
+
     func printCode() {
         // Here we're just printing out the preset so it can be copy and pasted into code
-        
+
         print("public func presetXXXXXX() {")
         print("    bitDepth = \(String(format: "%0.3f", bitcrusher.bitDepth))")
         print("    sampleRate = \(String(format: "%0.3f", bitcrusher.sampleRate))")
@@ -101,7 +101,7 @@ class PlaygroundView: AKPlaygroundView {
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height: 350))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

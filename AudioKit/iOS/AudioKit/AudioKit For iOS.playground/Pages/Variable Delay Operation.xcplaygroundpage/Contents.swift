@@ -3,13 +3,14 @@
 //: ---
 //:
 //: ## Variable Delay Operation
-//: 
-import PlaygroundSupport
+//:
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("drumloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "drumloop.wav", baseDir: .Resources)
+
+//: Here we set up a player to the loop the file's playback
+var player = try AKAudioPlayer(file: file)
 player.looping = true
 
 
@@ -23,5 +24,5 @@ AudioKit.output = effect
 AudioKit.start()
 player.play()
 
-PlaygroundPage.current.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

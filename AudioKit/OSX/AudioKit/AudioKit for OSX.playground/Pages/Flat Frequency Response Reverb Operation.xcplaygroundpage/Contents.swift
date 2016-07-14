@@ -8,9 +8,9 @@ import XCPlayground
 import AudioKit
 
 //: Music Example
-let bundle = NSBundle.mainBundle()
-let file = bundle.pathForResource("drumloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "drumloop.wav", baseDir: .Resources)
+
+let player = try AKAudioPlayer(file: file)
 player.looping = true
 
 let duration = AKOperation.sineWave(frequency: 0.2).scale(minimum: 0, maximum: 5)

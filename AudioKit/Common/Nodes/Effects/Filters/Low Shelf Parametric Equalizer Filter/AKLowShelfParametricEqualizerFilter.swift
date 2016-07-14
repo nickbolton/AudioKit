@@ -10,10 +10,11 @@ import AVFoundation
 
 /// This is an implementation of Zoelzer's parametric equalizer filter.
 ///
-/// - parameter input: Input node to process
-/// - parameter cornerFrequency: Corner frequency.
-/// - parameter gain: Amount at which the corner frequency value shall be increased or decreased. A value of 1 is a flat response.
-/// - parameter q: Q of the filter. sqrt(0.5) is no resonance.
+/// - Parameters:
+///   - input: Input node to process
+///   - cornerFrequency: Corner frequency.
+///   - gain: Amount at which the corner frequency value shall be increased or decreased. A value of 1 is a flat response.
+///   - q: Q of the filter. sqrt(0.5) is no resonance.
 ///
 public class AKLowShelfParametricEqualizerFilter: AKNode, AKToggleable {
 
@@ -82,10 +83,11 @@ public class AKLowShelfParametricEqualizerFilter: AKNode, AKToggleable {
 
     /// Initialize this equalizer node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter cornerFrequency: Corner frequency.
-    /// - parameter gain: Amount at which the corner frequency value shall be increased or decreased. A value of 1 is a flat response.
-    /// - parameter q: Q of the filter. sqrt(0.5) is no resonance.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - cornerFrequency: Corner frequency.
+    ///   - gain: Amount at which the corner frequency value shall be increased or decreased. A value of 1 is a flat response.
+    ///   - q: Q of the filter. sqrt(0.5) is no resonance.
     ///
     public init(
         _ input: AKNode,
@@ -106,33 +108,33 @@ public class AKLowShelfParametricEqualizerFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKLowShelfParametricEqualizerFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKLowShelfParametricEqualizerFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKLowShelfParametricEqualizerFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKLowShelfParametricEqualizerFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        cornerFrequencyParameter = tree.value(forKey: "cornerFrequency") as? AUParameter
-        gainParameter            = tree.value(forKey: "gain")            as? AUParameter
-        qParameter               = tree.value(forKey: "q")               as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        cornerFrequencyParameter = tree.valueForKey("cornerFrequency") as? AUParameter
+        gainParameter            = tree.valueForKey("gain")            as? AUParameter
+        qParameter               = tree.valueForKey("q")               as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.cornerFrequencyParameter!.address {
                     self.cornerFrequency = Double(value)
                 } else if address == self.gainParameter!.address {
@@ -141,11 +143,8 @@ public class AKLowShelfParametricEqualizerFilter: AKNode, AKToggleable {
                     self.q = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.cornerFrequency = Float(cornerFrequency)
         internalAU?.gain = Float(gain)
         internalAU?.q = Float(q)

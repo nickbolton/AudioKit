@@ -9,37 +9,32 @@ import PlaygroundSupport
 import AudioKit
 
 // Let's create an AKaudioFile :
-let ak = try? AKAudioFile(forReadingFileName: "click",
-                          withExtension: "wav",
-                          fromBaseDirectory: .resources)
+let ak = try? AKAudioFile(readFileName: "click.wav",
+                          baseDir: .Resources)
 
 // converted in an AVAudioFile
 let av = ak! as AVAudioFile
 
 //converted back into an AKAudioFile
-let ak2 = try? AKAudioFile(forReadingAVAudioFile: av)
+let ak2 = try? AKAudioFile(forReading: av.url)
 
 
 //: The baseDirectory parameter if an enum value from AKAudioFile.BaseDirectory :
-let documentsDir = AKAudioFile.BaseDirectory.documents
-let resourcesDir = AKAudioFile.BaseDirectory.resources
-let tempDir = AKAudioFile.BaseDirectory.temp
+let documentsDir = AKAudioFile.BaseDirectory.Documents
+let resourcesDir = AKAudioFile.BaseDirectory.Resources
+let tempDir = AKAudioFile.BaseDirectory.Temp
 
-// So to load an AKAudiofile from this playground Resources folder :
-let drumloop = try? AKAudioFile(forReadingFileName: "drumloop",
-                                withExtension: "wav",
-                                fromBaseDirectory: .resources)
+// baseDir is defaulted to be .Resources, so loading an AKAudiofile from this playground Resources folder can be done like this :
+let drumloop = try? AKAudioFile(readFileName: "drumloop.wav")
 
 //: You can load a file from a sub directory like this:
-let fmpia = try? AKAudioFile(forReadingFileName: "Sounds/fmpia1",
-                             withExtension: "wav",
-                             fromBaseDirectory: .resources)
+let fmpia = try? AKAudioFile(readFileName: "Sounds/fmpia1.wav",
+                             baseDir: .Resources)
 
 //: As AKAudioFile is an optional, it will be set to nil if a problem occurs. Notice that an error message is printed in the debug area, and an error is thrown...
 do {
-    let nonExistentFile = try AKAudioFile(forReadingFileName: "aFileName",
-                                          withExtension: "wav",
-                                          fromBaseDirectory: .resources)
+    let nonExistentFile = try AKAudioFile(readFileName: "nonExistent.wav",
+                                          baseDir: .Resources)
 } catch let error as NSError {
     print ("There's an error: \(error)")
 }
@@ -51,7 +46,7 @@ if drumloop != nil{
     // and so on...
 }
 
-//: The benefit of AKAudioFile versus AVAudioFile is that you can easily trim and export it. First, you must set a callback function that will be triggered upon export has been completed.
+//: AKAudioFile can easily be trimmed and exported. First, you must set a callback function that will be triggered upon export has been completed.
 func myExportCallBack(){
     print ("myExportCallBack has been triggered. It means that export ended")
     if myExport!!.succeeded
@@ -64,7 +59,7 @@ func myExportCallBack(){
         // If it is valid, we can play it :
         if exportedfile != nil {
 
-            print (exportedfile?.fileNameWithExtension)
+            print (exportedfile?.fileNamePlusExtension)
             let player = try? AKAudioPlayer(file: exportedfile!)
             AudioKit.output = player
             AudioKit.start()
@@ -77,10 +72,10 @@ func myExportCallBack(){
 }
 
 //: Then, we can extract from 1 to 2 seconds of drumloop, as an mp4 file that will be written in documents directory. If the destination file exists, it will be overwritten.
-let myExport = try? drumloop?.export(withFileName: "drumloopExported",
-                                     withExtension: .m4a, toDirectory: .documents,
+let myExport = try? drumloop?.export("exported",
+                                     ext: .m4a, baseDir: .Documents,
                                      callBack: myExportCallBack,
-                                     from: 1, to: 2)
+                                     inTime: 1, outTime: 2)
 
 
 
@@ -91,28 +86,11 @@ let mySecondWorkingFile = try? AKAudioFile()
 
 //: If you set no parameter, an AKAudioFile is created in temp directory, set to match AudioKit AKSettings (a stereo empty 32 bits float wav file at 44.1 kHz, with a unique name identifier :
 if myWorkingFile != nil && mySecondWorkingFile != nil {
-    print ("myWorkingFile name is \(myWorkingFile!.fileNameWithExtension)")
-    print ("mySecondWorkingFile name is \(mySecondWorkingFile!.fileNameWithExtension)")
+    let myWorkingFileName1 = myWorkingFile!.fileNamePlusExtension
+    let mySecondWorkingFileName = mySecondWorkingFile!.fileNamePlusExtension
 }
 
-//: But you can create a custom AKAudioFile too :
-let custom16bitsLinearSettings:[String : AnyObject] = [
-    AVSampleRateKey : NSNumber(float: Float(AKSettings.sampleRate)),
-    AVLinearPCMIsFloatKey: NSNumber(bool: false),
-    AVFormatIDKey : NSNumber(int: Int32(kAudioFormatLinearPCM)),
-    AVNumberOfChannelsKey : NSNumber(int: Int32(AKSettings.numberOfChannels)),
-    AVLinearPCMIsNonInterleaved: NSNumber(bool: false),
-    AVLinearPCMIsBigEndianKey: NSNumber(bool: false),
-    AVLinearPCMBitDepthKey: NSNumber(int: Int32(16)) ]
-
-
-let customFile = try? AKAudioFile(forWritingInBaseDirectory:.documents, withFileName: "customFile", andFileExtension: "aif", withSettings: custom16bitsLinearSettings)
-if customFile != nil {
-    let customFileSettings = customFile!.fileFormatSettings
-    print("customFileSettings: \(customFileSettings)")
-}
-//: Check AKAudioFile.swift to learn more about its properties and methods...
-
+//: But the benefits of using AKAudioFile instead of AVAudioFile, is that you can normalize, reverse them or extract samples as float arrays. You can even perform audio edits very easily. Have a look to AKAudioFile Part 2... 
 
 PlaygroundPage.current.needsIndefiniteExecution = true
 

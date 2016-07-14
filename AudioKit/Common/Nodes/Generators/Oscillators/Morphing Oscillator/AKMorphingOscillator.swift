@@ -11,13 +11,14 @@ import AVFoundation
 /// This is an oscillator with linear interpolation that is capable of morphing
 /// between an arbitrary number of wavetables.
 ///
-/// - parameter waveformArray:      An array of exactly four waveforms
-/// - parameter frequency:          Frequency (in Hz)
-/// - parameter amplitude:          Amplitude (typically a value between 0 and 1).
-/// - parameter index:              Index of the wavetable to use (fractional are okay).
-/// - parameter detuningOffset:     Frequency offset in Hz.
-/// - parameter detuningMultiplier: Frequency detuning multiplier
-/// - parameter phase:              Initial phase of waveform, expects a value 0-1
+/// - Parameters:
+///   - waveformArray:      An array of exactly four waveforms
+///   - frequency:          Frequency (in Hz)
+///   - amplitude:          Amplitude (typically a value between 0 and 1).
+///   - index:              Index of the wavetable to use (fractional are okay).
+///   - detuningOffset:     Frequency offset in Hz.
+///   - detuningMultiplier: Frequency detuning multiplier
+///   - phase:              Initial phase of waveform, expects a value 0-1
 ///
 public class AKMorphingOscillator: AKVoice {
 
@@ -44,7 +45,7 @@ public class AKMorphingOscillator: AKVoice {
             }
         }
     }
-    
+
     /// In cycles per second, or Hz.
     public var frequency: Double = 440 {
         willSet {
@@ -57,7 +58,7 @@ public class AKMorphingOscillator: AKVoice {
             }
         }
     }
-    
+
     /// Output Amplitude.
     public var amplitude: Double = 1 {
         willSet {
@@ -96,7 +97,7 @@ public class AKMorphingOscillator: AKVoice {
             }
         }
     }
-    
+
     /// Frequency detuning multiplier
     public var detuningMultiplier: Double = 1 {
         willSet {
@@ -116,24 +117,20 @@ public class AKMorphingOscillator: AKVoice {
     }
 
     // MARK: - Initialization
-    
-    /// Initialize the oscillator with defaults
-    override public convenience init() {
-        self.init(waveformArray: [AKTable(.Triangle), AKTable(.Square), AKTable(.Sine), AKTable(.Sawtooth)])
-    }
-    
+
     /// Initialize this Morpher node
     ///
-    /// - parameter waveformArray:      An array of exactly four waveforms
-    /// - parameter frequency:          Frequency (in Hz)
-    /// - parameter amplitude:          Amplitude (typically a value between 0 and 1).
-    /// - parameter index:              Index of the wavetable to use (fractional are okay).
-    /// - parameter detuningOffset:     Frequency offset in Hz.
-    /// - parameter detuningMultiplier: Frequency detuning multiplier
-    /// - parameter phase:              Initial phase of waveform, expects a value 0-1
+    /// - Parameters:
+    ///   - waveformArray:      An array of exactly four waveforms
+    ///   - frequency:          Frequency (in Hz)
+    ///   - amplitude:          Amplitude (typically a value between 0 and 1).
+    ///   - index:              Index of the wavetable to use (fractional are okay).
+    ///   - detuningOffset:     Frequency offset in Hz.
+    ///   - detuningMultiplier: Frequency detuning multiplier
+    ///   - phase:              Initial phase of waveform, expects a value 0-1
     ///
     public init(
-        waveformArray: [AKTable],
+        waveformArray: [AKTable] = [AKTable(.Triangle), AKTable(.Square), AKTable(.Sine), AKTable(.Sawtooth)],
         frequency: Double = 440,
         amplitude: Double = 0.5,
         index: Double = 0.0,
@@ -141,7 +138,6 @@ public class AKMorphingOscillator: AKVoice {
         detuningMultiplier: Double = 1,
         phase: Double = 0) {
 
-        // AOP Note: Waveforms are currently hardcoded, need to upgrade this
         self.waveformArray = waveformArray
         self.frequency = frequency
         self.amplitude = amplitude
@@ -159,42 +155,41 @@ public class AKMorphingOscillator: AKVoice {
 
         AUAudioUnit.registerSubclass(
             AKMorphingOscillatorAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKMorphingOscillator",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitGenerator = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitGenerator
-            self.internalAU = avAudioUnitGenerator.auAudioUnit as? AKMorphingOscillatorAudioUnit
+            self.internalAU = avAudioUnitGenerator.AUAudioUnit as? AKMorphingOscillatorAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
-            
-            /// AOP need to set up phase
+            AudioKit.engine.attachNode(self.avAudioNode)
+
             for i in 0 ..< waveformArray.count {
                 self.internalAU?.setupWaveform(UInt32(i), size: Int32(waveformArray[i].size))
                 for j in 0 ..< waveformArray[i].size{
-                    self.internalAU?.setWaveform(UInt32(i), withValue: waveformArray[i].values[j], at: UInt32(j))
+                    self.internalAU?.setWaveform(UInt32(i), withValue: waveformArray[i].values[j], atIndex: UInt32(j))
                 }
             }
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        frequencyParameter          = tree.value(forKey: "frequency")          as? AUParameter
-        amplitudeParameter          = tree.value(forKey: "amplitude")          as? AUParameter
-        indexParameter              = tree.value(forKey: "index")              as? AUParameter
-        detuningOffsetParameter     = tree.value(forKey: "detuningOffset")     as? AUParameter
-        detuningMultiplierParameter = tree.value(forKey: "detuningMultiplier") as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        frequencyParameter          = tree.valueForKey("frequency")          as? AUParameter
+        amplitudeParameter          = tree.valueForKey("amplitude")          as? AUParameter
+        indexParameter              = tree.valueForKey("index")              as? AUParameter
+        detuningOffsetParameter     = tree.valueForKey("detuningOffset")     as? AUParameter
+        detuningMultiplierParameter = tree.valueForKey("detuningMultiplier") as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.frequencyParameter!.address {
                     self.frequency = Double(value)
                 } else if address == self.amplitudeParameter!.address {
@@ -207,22 +202,12 @@ public class AKMorphingOscillator: AKVoice {
                     self.detuningMultiplier = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
         internalAU?.frequency = Float(frequency)
         internalAU?.amplitude = Float(amplitude)
         internalAU?.index = Float(index) / Float(waveformArray.count - 1)
         internalAU?.detuningOffset = Float(detuningOffset)
         internalAU?.detuningMultiplier = Float(detuningMultiplier)
-    }
-
-    /// Function create an identical new node for use in creating polyphonic instruments
-    override public func duplicate() -> AKVoice {
-        let copy = AKMorphingOscillator(waveformArray: self.waveformArray, frequency: self.frequency, amplitude: self.amplitude, index: self.index, detuningOffset: self.detuningOffset, detuningMultiplier: self.detuningMultiplier, phase: self.phase)
-        return copy
     }
 
     /// Function to start, play, or activate the node, all do the same thing

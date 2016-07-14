@@ -11,8 +11,9 @@ import AVFoundation
 /// These filters are Butterworth second-order IIR filters. They offer an almost
 /// flat passband and very good precision and stopband attenuation.
 ///
-/// - parameter input: Input node to process
-/// - parameter cutoffFrequency: Cutoff frequency. (in Hertz)
+/// - Parameters:
+///   - input: Input node to process
+///   - cutoffFrequency: Cutoff frequency. (in Hertz)
 ///
 public class AKLowPassButterworthFilter: AKNode, AKToggleable {
 
@@ -34,7 +35,7 @@ public class AKLowPassButterworthFilter: AKNode, AKToggleable {
     }
 
     /// Cutoff frequency. (in Hertz)
-    public var cutoffFrequency: Double = 1000 {
+    public var cutoffFrequency: Double = 1000.0 {
         willSet {
             if cutoffFrequency != newValue {
                 if internalAU!.isSetUp() {
@@ -55,12 +56,13 @@ public class AKLowPassButterworthFilter: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter cutoffFrequency: Cutoff frequency. (in Hertz)
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - cutoffFrequency: Cutoff frequency. (in Hertz)
     ///
     public init(
         _ input: AKNode,
-        cutoffFrequency: Double = 1000) {
+        cutoffFrequency: Double = 1000.0) {
 
         self.cutoffFrequency = cutoffFrequency
 
@@ -73,40 +75,37 @@ public class AKLowPassButterworthFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKLowPassButterworthFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKLowPassButterworthFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKLowPassButterworthFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKLowPassButterworthFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        cutoffFrequencyParameter = tree.value(forKey: "cutoffFrequency") as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        cutoffFrequencyParameter = tree.valueForKey("cutoffFrequency") as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.cutoffFrequencyParameter!.address {
                     self.cutoffFrequency = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.cutoffFrequency = Float(cutoffFrequency)
     }
 

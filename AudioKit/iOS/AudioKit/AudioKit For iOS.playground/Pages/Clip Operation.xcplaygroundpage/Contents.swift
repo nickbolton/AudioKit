@@ -4,12 +4,12 @@
 //:
 //: ## Clip Operation
 //:
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("mixloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "mixloop.wav", baseDir: .Resources)
+
+let player = try AKAudioPlayer(file: file)
 player.looping = true
 
 let sinusoid = AKOperation.sineWave(frequency: 0.3)
@@ -23,5 +23,5 @@ AudioKit.output = effect
 AudioKit.start()
 player.play()
 
-PlaygroundPage.current.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

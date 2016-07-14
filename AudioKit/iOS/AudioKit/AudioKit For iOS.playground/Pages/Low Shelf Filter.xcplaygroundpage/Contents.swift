@@ -4,12 +4,12 @@
 //:
 //: ## Low Shelf Filter
 //:
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("mixloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "mixloop.wav", baseDir: .Resources)
+
+let player = try AKAudioPlayer(file: file)
 player.looping = true
 
 var lowShelfFilter = AKLowShelfFilter(player)
@@ -56,29 +56,29 @@ class PlaygroundView: AKPlaygroundView {
 
     //: Handle UI Events
 
-    func startLoop(_ part: String) {
+    func startLoop(part: String) {
         player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
         player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
@@ -94,7 +94,7 @@ class PlaygroundView: AKPlaygroundView {
     func bypass() {
         lowShelfFilter.bypass()
     }
-    
+
     func setcutoffFrequency(slider: Slider) {
         lowShelfFilter.cutoffFrequency = Double(slider.value)
         let cutoffFrequency = String(format: "%0.1f", lowShelfFilter.cutoffFrequency)
@@ -111,18 +111,18 @@ class PlaygroundView: AKPlaygroundView {
 
     func printCode() {
         // Here we're just printing out the preset so it can be copy and pasted into code
-        
+
         print("public func presetXXXXXX() {")
         print("    cutoffFrequency = \(String(format: "%0.3f", lowShelfFilter.cutoffFrequency))")
-        
+
         print("    gain = \(String(format: "%0.3f", lowShelfFilter.gain))")
-        
+
         print("}\n")
     }
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height: 550))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

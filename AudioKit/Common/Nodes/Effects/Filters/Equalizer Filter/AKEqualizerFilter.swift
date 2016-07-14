@@ -13,10 +13,11 @@ import AVFoundation
 /// a peak at the center frequency with a width dependent on bandwidth. If gain
 /// is less than 1, a notch is formed around the center frequency.
 ///
-/// - parameter input: Input node to process
-/// - parameter centerFrequency: Center frequency. (in Hertz)
-/// - parameter bandwidth: The peak/notch bandwidth in Hertz
-/// - parameter gain: The peak/notch gain
+/// - Parameters:
+///   - input: Input node to process
+///   - centerFrequency: Center frequency. (in Hertz)
+///   - bandwidth: The peak/notch bandwidth in Hertz
+///   - gain: The peak/notch gain
 ///
 public class AKEqualizerFilter: AKNode, AKToggleable {
 
@@ -40,7 +41,7 @@ public class AKEqualizerFilter: AKNode, AKToggleable {
     }
 
     /// Center frequency. (in Hertz)
-    public var centerFrequency: Double = 1000 {
+    public var centerFrequency: Double = 1000.0 {
         willSet {
             if centerFrequency != newValue {
                 if internalAU!.isSetUp() {
@@ -52,7 +53,7 @@ public class AKEqualizerFilter: AKNode, AKToggleable {
         }
     }
     /// The peak/notch bandwidth in Hertz
-    public var bandwidth: Double = 100 {
+    public var bandwidth: Double = 100.0 {
         willSet {
             if bandwidth != newValue {
                 if internalAU!.isSetUp() {
@@ -64,7 +65,7 @@ public class AKEqualizerFilter: AKNode, AKToggleable {
         }
     }
     /// The peak/notch gain
-    public var gain: Double = 10 {
+    public var gain: Double = 10.0 {
         willSet {
             if gain != newValue {
                 if internalAU!.isSetUp() {
@@ -85,16 +86,17 @@ public class AKEqualizerFilter: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter centerFrequency: Center frequency. (in Hertz)
-    /// - parameter bandwidth: The peak/notch bandwidth in Hertz
-    /// - parameter gain: The peak/notch gain
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - centerFrequency: Center frequency. (in Hertz)
+    ///   - bandwidth: The peak/notch bandwidth in Hertz
+    ///   - gain: The peak/notch gain
     ///
     public init(
         _ input: AKNode,
-        centerFrequency: Double = 1000,
-        bandwidth: Double = 100,
-        gain: Double = 10) {
+        centerFrequency: Double = 1000.0,
+        bandwidth: Double = 100.0,
+        gain: Double = 10.0) {
 
         self.centerFrequency = centerFrequency
         self.bandwidth = bandwidth
@@ -109,33 +111,33 @@ public class AKEqualizerFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKEqualizerFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKEqualizerFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKEqualizerFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKEqualizerFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        centerFrequencyParameter = tree.value(forKey: "centerFrequency") as? AUParameter
-        bandwidthParameter       = tree.value(forKey: "bandwidth")       as? AUParameter
-        gainParameter            = tree.value(forKey: "gain")            as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        centerFrequencyParameter = tree.valueForKey("centerFrequency") as? AUParameter
+        bandwidthParameter       = tree.valueForKey("bandwidth")       as? AUParameter
+        gainParameter            = tree.valueForKey("gain")            as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.centerFrequencyParameter!.address {
                     self.centerFrequency = Double(value)
                 } else if address == self.bandwidthParameter!.address {
@@ -144,11 +146,8 @@ public class AKEqualizerFilter: AKNode, AKToggleable {
                     self.gain = Double(value)
                 }
             }
-
-            DispatchQueue.main.async(execute: executionBlock)
         }
 
-        token = tree.token(byAddingParameterObserver: observer)
         internalAU?.centerFrequency = Float(centerFrequency)
         internalAU?.bandwidth = Float(bandwidth)
         internalAU?.gain = Float(gain)

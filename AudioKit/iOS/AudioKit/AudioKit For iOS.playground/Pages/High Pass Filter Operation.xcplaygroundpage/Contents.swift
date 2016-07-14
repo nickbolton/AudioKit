@@ -4,7 +4,7 @@
 //:
 //: ## High Pass Filter Operation
 //:
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
 //: Filter setup
@@ -16,9 +16,9 @@ let whiteNoise = AKWhiteNoise(amplitude: 0.1) // Bring down the amplitude so tha
 let filteredNoise = AKOperationEffect(whiteNoise, operation: filter)
 
 //: Music Example
-let bundle = Bundle.main()
-let file = bundle.pathForResource("mixloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "mixloop.wav", baseDir: .Resources)
+
+let player = try AKAudioPlayer(file: file)
 player.looping = true
 let filteredPlayer = AKOperationEffect(player, operation: filter)
 
@@ -31,6 +31,6 @@ whiteNoise.start()
 player.play()
 
 
-PlaygroundPage.current.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

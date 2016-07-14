@@ -4,13 +4,14 @@
 //:
 //: ## FFT Analysis
 //:
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("leadloop", ofType: "wav")
+let file = try AKAudioFile(readFileName: "mixloop.wav", baseDir: .Resources)
 
-var player = AKAudioPlayer(file!)
+
+//: Here we set up a player to the loop the file's playback
+let player = try AKAudioPlayer(file: file)
 player.looping = true
 
 //: The amplitude tracker's passes its input to the output, so we can insert into the signal chain at the bottom
@@ -26,7 +27,7 @@ AKPlaygroundLoop(every: 0.1) {
 }
 
 //: This keeps the playground running so that audio can play for a long time
-PlaygroundPage.current.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
 
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

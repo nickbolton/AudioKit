@@ -9,30 +9,35 @@
 import Foundation
 import AVFoundation
 
-public typealias AKCallback = (Void) -> Void
+public typealias AKCallback = Void -> Void
+
 
 /// Top level AudioKit managing class
 @objc public class AudioKit: NSObject {
-    
+
+
+    // Queue used for AKAudioFile Async Processings
+    static let AKAudioFileProcessQueue = dispatch_queue_create("AKAudioFileProcessQueue", DISPATCH_QUEUE_SERIAL)
+
     // MARK: Global audio format (44.1K, Stereo)
-    
+
     /// Format of AudioKit Nodes
     public static let format = AKSettings.audioFormat
 
     // MARK: - Internal audio engine mechanics
-    
+
     /// Reference to the AV Audio Engine
     public static let engine = AVAudioEngine()
-    
+
     static var shouldBeRunning = false
-    
+
     /// An audio output operation that most applications will need to use last
     public static var output: AKNode? {
         didSet {
             engine.connect(output!.avAudioNode, to: engine.outputNode, format: AudioKit.format)
         }
     }
-    
+
     /// Enumerate the list of available input devices.
     public static var availableInputs: [AKDevice]? {
         #if os(OSX)
@@ -40,7 +45,7 @@ public typealias AKCallback = (Void) -> Void
             return EZAudioDevice.inputDevices().map({ AKDevice(name: $0.name, deviceID: $0.deviceID) })
         #else
             if let devices = AVAudioSession.sharedInstance().availableInputs {
-                return devices.map({ AKDevice(name: $0.portName, deviceID: $0.uid) })
+                return devices.map({ AKDevice(name: $0.portName, deviceID: $0.UID) })
             }
             return nil
         #endif
@@ -58,19 +63,19 @@ public typealias AKCallback = (Void) -> Void
     /// The name of the current preferred input device, if available.
     public static var inputDevice: AKDevice? {
         #if os(OSX)
-            if let dev = EZAudioDevice.currentInput() {
+            if let dev = EZAudioDevice.currentInputDevice() {
                 return AKDevice(name: dev.name, deviceID: dev.deviceID)
             }
         #else
             if let dev = AVAudioSession.sharedInstance().preferredInput {
-                return AKDevice(name: dev.portName, deviceID: dev.uid)
+                return AKDevice(name: dev.portName, deviceID: dev.UID)
             }
         #endif
         return nil
     }
-    
+
     /// Change the preferred input device, giving it one of the names from the list of available inputs.
-    public static func setInputDevice(_ input: AKDevice) throws {
+    public static func setInputDevice(input: AKDevice) throws {
         #if os(OSX)
             var address = AudioObjectPropertyAddress(
                 mSelector: kAudioHardwarePropertyDefaultInputDevice,
@@ -79,11 +84,11 @@ public typealias AKCallback = (Void) -> Void
             var devid = input.deviceID
             AudioObjectSetPropertyData(
                 AudioObjectID(kAudioObjectSystemObject),
-                &address, 0, nil, UInt32(sizeof(AudioDeviceID.self)), &devid)
+                &address, 0, nil, UInt32(sizeof(AudioDeviceID)), &devid)
         #else
             if let devices = AVAudioSession.sharedInstance().availableInputs {
                 for dev in devices {
-                    if dev.uid == input.deviceID {
+                    if dev.UID == input.deviceID {
                         try AVAudioSession.sharedInstance().setPreferredInput(dev)
                     }
                 }
@@ -91,7 +96,7 @@ public typealias AKCallback = (Void) -> Void
         #endif
     }
     /// Change the preferred output device, giving it one of the names from the list of available output.
-    public static func setOutputDevice(_ output: AKDevice) throws {
+    public static func setOutputDevice(output: AKDevice) throws {
         #if os(OSX)
             var address = AudioObjectPropertyAddress(
                 mSelector: kAudioHardwarePropertyDefaultOutputDevice,
@@ -100,12 +105,12 @@ public typealias AKCallback = (Void) -> Void
             var devid = output.deviceID
             AudioObjectSetPropertyData(
                 AudioObjectID(kAudioObjectSystemObject),
-                &address, 0, nil, UInt32(sizeof(AudioDeviceID.self)), &devid)
+                &address, 0, nil, UInt32(sizeof(AudioDeviceID)), &devid)
         #else
             //not available on ios
         #endif
     }
-    
+
     /// Start up the audio engine
     public static func start() {
         if output == nil {
@@ -114,63 +119,65 @@ public typealias AKCallback = (Void) -> Void
         // Start the engine.
         do {
             self.engine.prepare()
-            
+
             #if os(iOS)
-                
-                NotificationCenter.default.addObserver(
+
+                NSNotificationCenter.defaultCenter().addObserver(
                     self,
                     selector: #selector(AudioKit.restartEngineAfterRouteChange(_:)),
-                    name: NSNotification.Name.AVAudioSessionRouteChange,
+                    name: AVAudioSessionRouteChangeNotification,
                     object: nil)
             #endif
             #if !os(OSX)
                 if AKSettings.audioInputEnabled {
-                    
+
                 #if os(iOS)
                     if AKSettings.defaultToSpeaker {
-                        
-                        try AVAudioSession.sharedInstance().setCategory(
-                            AVAudioSessionCategoryPlayAndRecord,
-                            with: AVAudioSessionCategoryOptions.defaultToSpeaker)
-                        
+                        try AKSettings.setSessionCategory(AKSettings.SessionCategory.PlayAndRecord, withOptions: AVAudioSessionCategoryOptions.DefaultToSpeaker)
+
                         // listen to AVAudioEngineConfigurationChangeNotification
                         // and restart the engine if it's stopped.
-                        NotificationCenter.default.addObserver(
+                        NSNotificationCenter.defaultCenter().addObserver(
                             self,
                             selector: #selector(AudioKit.audioEngineConfigurationChange(_:)),
-                            name: NSNotification.Name.AVAudioEngineConfigurationChange,
+                            name: AVAudioEngineConfigurationChangeNotification,
                             object: engine)
-                                                
+
                     } else {
-                        try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayAndRecord)
-                        
+
+                         try AKSettings.setSessionCategory(AKSettings.SessionCategory.PlayAndRecord)
+
                     }
                 #else
                     // tvOS
-                    try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayAndRecord)
-                    
+
+                    try AKSettings.setSessionCategory(AKSettings.SessionCategory.PlayAndRecord)
+
                 #endif
-                    
+
                 } else if AKSettings.playbackWhileMuted {
-                    try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback)
+
+                try AKSettings.setSessionCategory(AKSettings.SessionCategory.Playback)
+
                 } else {
-                    try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryAmbient)
+                    try AKSettings.setSessionCategory(AKSettings.SessionCategory.Ambient)
+
                 }
             #if os(iOS)
                 try AVAudioSession.sharedInstance().setActive(true)
             #endif
 
             #endif
-            
+
             try self.engine.start()
-            
+
             shouldBeRunning = true
         } catch {
             fatalError("AudioKit: Could not start engine. error: \(error).")
         }
-        
+
     }
-    
+
     /// Stop the audio engine
     public static func stop() {
         // Stop the engine.
@@ -184,27 +191,28 @@ public typealias AKCallback = (Void) -> Void
         }
         #endif
     }
-    
+
     // MARK: Testing
-    
+
     /// Testing AKNode
     public static var tester: AKTester?
 
     /// Test the output of a given node
     ///
-    /// - parameter node: AKNode to test
-    /// - parameter samples: Number of samples to generate in the test
+    /// - Parameters:
+    ///   - node: AKNode to test
+    ///   - samples: Number of samples to generate in the test
     ///
-    public static func testOutput(_ node: AKNode, samples: Int) {
+    public static func testOutput(node: AKNode, samples: Int) {
         tester = AKTester(node, samples: samples)
         output = tester
     }
-    
-    // Listen to changes in audio configuration 
+
+    // Listen to changes in audio configuration
     // and restart the audio engine if it stops and should be playing
-    @objc private static func audioEngineConfigurationChange(_ notification: Notification) -> Void {
-        
-        if (shouldBeRunning == true && self.engine.isRunning == false) {
+    @objc private static func audioEngineConfigurationChange(notification: NSNotification) -> Void {
+
+        if (shouldBeRunning == true && self.engine.running == false) {
             do {
                 try self.engine.start()
             } catch {
@@ -213,31 +221,31 @@ public typealias AKCallback = (Void) -> Void
         }
 
     }
-    
+
     // Restarts the engine after audio output has been changed, like headphones plugged in.
-    @objc private static func restartEngineAfterRouteChange(_ notification: Notification) {
+    @objc private static func restartEngineAfterRouteChange(notification: NSNotification) {
         if shouldBeRunning {
             do {
                 try self.engine.start()
                 // Sends notification after restarting the engine, so it is safe to resume AudioKit functions.
                 if AKSettings.notificationsEnabled {
-                    NotificationCenter.default.post(
-                        name: Notification.Name(rawValue: AKNotifications.engineRestartedAfterRouteChange),
+                    NSNotificationCenter.defaultCenter().postNotificationName(
+                        AKNotifications.engineRestartedAfterRouteChange,
                         object: nil,
-                        userInfo: (notification as NSNotification).userInfo)
-                    
+                        userInfo: notification.userInfo)
+
                 }
             } catch {
                 print("error restarting engine after route change")
             }
         }
     }
-    
+
     deinit {
         #if os(iOS)
-            NotificationCenter.default.removeObserver(
+            NSNotificationCenter.defaultCenter().removeObserver(
                 self,
-                name: NSNotification.Name(rawValue: AKNotifications.engineRestartedAfterRouteChange),
+                name: AKNotifications.engineRestartedAfterRouteChange,
                 object: nil)
         #endif
     }

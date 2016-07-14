@@ -10,8 +10,10 @@ import AVFoundation
 
 /// Table-lookup tremolo with linear interpolation
 ///
-/// - parameter input: Input node to process
-/// - parameter frequency: Frequency (Hz)
+/// - Parameters:
+///   - input: Input node to process
+///   - frequency: Frequency (Hz)
+///   - depth: Depth
 ///
 public class AKTremolo: AKNode, AKToggleable {
 
@@ -22,6 +24,7 @@ public class AKTremolo: AKNode, AKToggleable {
 
     private var waveform: AKTable?
     private var frequencyParameter: AUParameter?
+    private var depthParameter: AUParameter?
 
     /// Ramp Time represents the speed at which parameters are allowed to change
     public var rampTime: Double = AKSettings.rampTime {
@@ -46,6 +49,19 @@ public class AKTremolo: AKNode, AKToggleable {
         }
     }
 
+    /// Depth
+    public var depth: Double = 1 {
+        willSet {
+            if depth != newValue {
+                if internalAU!.isSetUp() {
+                    depthParameter?.setValue(Float(newValue), originator: token!)
+                } else {
+                    internalAU?.depth = Float(newValue)
+                }
+            }
+        }
+    }
+
     /// Tells whether the node is processing (ie. started, playing, or active)
     public var isStarted: Bool {
         return internalAU!.isPlaying()
@@ -55,13 +71,16 @@ public class AKTremolo: AKNode, AKToggleable {
 
     /// Initialize this tremolo node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter frequency: Frequency (Hz)
-    /// - parameter waveform:  Shape of the tremolo (default to sine)
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - frequency: Frequency (Hz)
+    ///   - depth: Depth
+    ///   - waveform:  Shape of the tremolo (default to sine)
     ///
     public init(
         _ input: AKNode,
         frequency: Double = 10,
+        depth: Double = 1.0,
         waveform: AKTable = AKTable(.PositiveSine)) {
 
         self.waveform = waveform
@@ -76,45 +95,54 @@ public class AKTremolo: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKTremoloAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKTremolo",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKTremoloAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKTremoloAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
             self.internalAU?.setupWaveform(Int32(waveform.size))
             for i in 0 ..< waveform.size {
-                self.internalAU?.setWaveformValue(waveform.values[i], at: UInt32(i))
+                self.internalAU?.setWaveformValue(waveform.values[i], atIndex: UInt32(i))
             }
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        frequencyParameter = tree.value(forKey: "frequency") as? AUParameter
+        frequencyParameter = tree.valueForKey("frequency") as? AUParameter
 
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.frequencyParameter!.address {
                     self.frequency = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
         internalAU?.frequency = Float(frequency)
+
+        depthParameter = tree.valueForKey("depth") as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
+            address, value in
+
+            dispatch_async(dispatch_get_main_queue()) {
+                if address == self.depthParameter!.address {
+                    self.depth = Double(value)
+                }
+            }
+        }
+        internalAU?.depth = Float(depth)
     }
 
     // MARK: - Control

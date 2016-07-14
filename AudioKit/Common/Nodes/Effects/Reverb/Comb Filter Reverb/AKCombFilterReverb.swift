@@ -14,9 +14,10 @@ import AVFoundation
 /// for a signal to decay to 1/1000, or 60dB down from its original amplitude).
 /// Output from a comb filter will appear only after loopDuration seconds.
 ///
-/// - parameter input: Input node to process
-/// - parameter reverbDuration: The time in seconds for a signal to decay to 1/1000, or 60dB from its original amplitude. (aka RT-60).
-/// - parameter loopDuration: The loop time of the filter, in seconds. This can also be thought of as the delay time. Determines frequency response curve, loopDuration * sr/2 peaks spaced evenly between 0 and sr/2.
+/// - Parameters:
+///   - input: Input node to process
+///   - reverbDuration: The time in seconds for a signal to decay to 1/1000, or 60dB from its original amplitude. (aka RT-60).
+///   - loopDuration: The loop time of the filter, in seconds. This can also be thought of as the delay time. Determines frequency response curve, loopDuration * sr/2 peaks spaced evenly between 0 and sr/2.
 ///
 public class AKCombFilterReverb: AKNode, AKToggleable {
 
@@ -59,9 +60,10 @@ public class AKCombFilterReverb: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter reverbDuration: The time in seconds for a signal to decay to 1/1000, or 60dB from its original amplitude. (aka RT-60).
-    /// - parameter loopDuration: The loop time of the filter, in seconds. This can also be thought of as the delay time. Determines frequency response curve, loopDuration * sr/2 peaks spaced evenly between 0 and sr/2.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - reverbDuration: The time in seconds for a signal to decay to 1/1000, or 60dB from its original amplitude. (aka RT-60).
+    ///   - loopDuration: The loop time of the filter, in seconds. This can also be thought of as the delay time. Determines frequency response curve, loopDuration * sr/2 peaks spaced evenly between 0 and sr/2.
     ///
     public init(
         _ input: AKNode,
@@ -79,41 +81,38 @@ public class AKCombFilterReverb: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKCombFilterReverbAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKCombFilterReverb",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKCombFilterReverbAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKCombFilterReverbAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
             self.internalAU!.setLoopDuration(Float(loopDuration))
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        reverbDurationParameter = tree.value(forKey: "reverbDuration") as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        reverbDurationParameter = tree.valueForKey("reverbDuration") as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.reverbDurationParameter!.address {
                     self.reverbDuration = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.reverbDuration = Float(reverbDuration)
     }
 

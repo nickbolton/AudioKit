@@ -14,9 +14,10 @@ import AVFoundation
 /// 1/1000, or 60dB down from its original amplitude).  Output will begin to
 /// appear immediately.
 ///
-/// - parameter input: Input node to process
-/// - parameter reverbDuration: The duration in seconds for a signal to decay to 1/1000, or 60dB down from its original amplitude.
-/// - parameter loopDuration: The loop duration of the filter, in seconds. This can also be thought of as the delay time or “echo density” of the reverberation.
+/// - Parameters:
+///   - input: Input node to process
+///   - reverbDuration: The duration in seconds for a signal to decay to 1/1000, or 60dB down from its original amplitude.
+///   - loopDuration: The loop duration of the filter, in seconds. This can also be thought of as the delay time or “echo density” of the reverberation.
 ///
 public class AKFlatFrequencyResponseReverb: AKNode, AKToggleable {
 
@@ -59,9 +60,10 @@ public class AKFlatFrequencyResponseReverb: AKNode, AKToggleable {
 
     /// Initialize this reverb node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter reverbDuration: The duration in seconds for a signal to decay to 1/1000, or 60dB down from its original amplitude.
-    /// - parameter loopDuration: The loop duration of the filter, in seconds. This can also be thought of as the delay time or “echo density” of the reverberation.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - reverbDuration: The duration in seconds for a signal to decay to 1/1000, or 60dB down from its original amplitude.
+    ///   - loopDuration: The loop duration of the filter, in seconds. This can also be thought of as the delay time or “echo density” of the reverberation.
     ///
     public init(
         _ input: AKNode,
@@ -79,41 +81,38 @@ public class AKFlatFrequencyResponseReverb: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKFlatFrequencyResponseReverbAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKFlatFrequencyResponseReverb",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKFlatFrequencyResponseReverbAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKFlatFrequencyResponseReverbAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
             self.internalAU!.setLoopDuration(Float(loopDuration))
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        reverbDurationParameter = tree.value(forKey: "reverbDuration") as? AUParameter
+        reverbDurationParameter = tree.valueForKey("reverbDuration") as? AUParameter
 
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.reverbDurationParameter!.address {
                     self.reverbDuration = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.reverbDuration = Float(reverbDuration)
     }
 

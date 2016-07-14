@@ -25,7 +25,7 @@ extension AKMIDI {
     }
     
     /// Add a listener to the listeners
-    public func addListener(_ listener: AKMIDIListener) {
+    public func addListener(listener: AKMIDIListener) {
         listeners.append(listener)
     }
     
@@ -38,7 +38,7 @@ extension AKMIDI {
     ///
     /// - parameter namedInput: String containing the name of the MIDI Input
     ///
-    public func openInput(_ namedInput: String = "") {
+    public func openInput(namedInput: String = "") {
         var result = noErr
         
         let sourceCount = MIDIGetNumberOfSources()
@@ -72,7 +72,7 @@ extension AKMIDI {
     ///
     /// - parameter namedInput: String containing the name of the MIDI Input
     ///
-    public func closeInput(_ namedInput: String = "") {
+    public func closeInput(namedInput: String = "") {
         var result = noErr
         
         for key in inputPorts.keys {
@@ -81,8 +81,8 @@ extension AKMIDI {
                     
                     result = MIDIPortDisconnectSource(port, endpoint)
                     if result == noErr {
-                        endpoints.removeValue(forKey: namedInput)
-                        inputPorts.removeValue(forKey: namedInput)
+                        endpoints.removeValueForKey(namedInput)
+                        inputPorts.removeValueForKey(namedInput)
                     } else {
                         print("Error closing midiInPort : \(result)")
                     }
@@ -97,51 +97,51 @@ extension AKMIDI {
         closeInput()
     }
     
-    internal func handleMidiMessage(_ event: AKMIDIEvent) {
+    internal func handleMidiMessage(event: AKMIDIEvent) {
         for listener in listeners {
             let type = event.status
             switch type {
-            case AKMIDIStatus.controllerChange:
+            case AKMIDIStatus.ControllerChange:
                 listener.receivedMIDIController(Int(event.internalData[1]),
                                                 value: Int(event.internalData[2]),
                                                 channel: Int(event.channel))
-            case AKMIDIStatus.channelAftertouch:
+            case AKMIDIStatus.ChannelAftertouch:
                 listener.receivedMIDIAfterTouch(Int(event.internalData[1]),
                                                 channel: Int(event.channel))
-            case AKMIDIStatus.noteOn:
-                listener.receivedMIDINoteOn(Int(event.internalData[1]),
-                                            velocity: Int(event.internalData[2]),
+            case AKMIDIStatus.NoteOn:
+                listener.receivedMIDINoteOn(noteNumber: Int(event.internalData[1]),
+                                            velocity: MIDIVelocity(event.internalData[2]),
                                             channel: Int(event.channel))
-            case AKMIDIStatus.noteOff:
-                listener.receivedMIDINoteOff(Int(event.internalData[1]),
-                                             velocity: Int(event.internalData[2]),
+            case AKMIDIStatus.NoteOff:
+                listener.receivedMIDINoteOff(noteNumber: Int(event.internalData[1]),
+                                             velocity: MIDIVelocity(event.internalData[2]),
                                              channel: Int(event.channel))
-            case AKMIDIStatus.pitchWheel:
+            case AKMIDIStatus.PitchWheel:
                 listener.receivedMIDIPitchWheel(Int(event.data),
                                                 channel: Int(event.channel))
-            case AKMIDIStatus.polyphonicAftertouch:
-                listener.receivedMIDIAftertouchOnNote(Int(event.internalData[1]),
-                                                      pressure: Int(event.internalData[2]),
-                                                      channel: Int(event.channel))
-            case AKMIDIStatus.programChange:
+            case AKMIDIStatus.PolyphonicAftertouch:
+                listener.receivedMIDIAftertouch(noteNumber: Int(event.internalData[1]),
+                                                pressure: Int(event.internalData[2]),
+                                                channel: Int(event.channel))
+            case AKMIDIStatus.ProgramChange:
                 listener.receivedMIDIProgramChange(Int(event.internalData[1]),
                                                    channel: Int(event.channel))
-            case AKMIDIStatus.systemCommand:
+            case AKMIDIStatus.SystemCommand:
                 listener.receivedMIDISystemCommand(event.internalData)
             }
         }
     }
     
-    internal func MyMIDINotifyBlock(_ midiNotification: UnsafePointer<MIDINotification>) {
-        _ = midiNotification.pointee
+    internal func MyMIDINotifyBlock(midiNotification: UnsafePointer<MIDINotification>) {
+        _ = midiNotification.memory
         //do something with notification - change _ above to let varname
         //print("MIDI Notify, messageId= \(notification.messageID.rawValue)")
         
     }
     
     internal func MyMIDIReadBlock(
-        _ packetList: UnsafePointer<MIDIPacketList>,
-        srcConnRefCon: UnsafeMutablePointer<Void>?) -> Void {
+        packetList: UnsafePointer<MIDIPacketList>,
+        srcConnRefCon: UnsafeMutablePointer<Void>) -> Void {
         /*
          //can't yet figure out how to access the port passed via srcConnRefCon
          //maybe having this port is not that necessary though...
@@ -149,7 +149,7 @@ extension AKMIDI {
          let midiPort = midiPortPointer.memory
          */
         
-        for packet in packetList.pointee {
+        for packet in packetList.memory {
             // a coremidi packet may contain multiple midi events
             for event in packet {
                 handleMidiMessage(event)

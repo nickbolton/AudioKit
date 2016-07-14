@@ -10,11 +10,12 @@ import AVFoundation
 
 /// Emulation of the Roland TB-303 filter
 ///
-/// - parameter input: Input node to process
-/// - parameter cutoffFrequency: Cutoff frequency. (in Hertz)
-/// - parameter resonance: Resonance, generally < 1, but not limited to it. Higher than 1 resonance values might cause aliasing, analogue synths generally allow resonances to be above 1.
-/// - parameter distortion: Distortion. Value is typically 2.0; deviation from this can cause stability issues. 
-/// - parameter resonanceAsymmetry: Asymmetry of resonance. Value is between 0-1
+/// - Parameters:
+///   - input: Input node to process
+///   - cutoffFrequency: Cutoff frequency. (in Hertz)
+///   - resonance: Resonance, generally < 1, but not limited to it. Higher than 1 resonance values might cause aliasing, analogue synths generally allow resonances to be above 1.
+///   - distortion: Distortion. Value is typically 2.0; deviation from this can cause stability issues.
+///   - resonanceAsymmetry: Asymmetry of resonance. Value is between 0-1
 ///
 public class AKRolandTB303Filter: AKNode, AKToggleable {
 
@@ -62,7 +63,7 @@ public class AKRolandTB303Filter: AKNode, AKToggleable {
             }
         }
     }
-    /// Distortion. Value is typically 2.0; deviation from this can cause stability issues. 
+    /// Distortion. Value is typically 2.0; deviation from this can cause stability issues.
     public var distortion: Double = 2.0 {
         willSet {
             if distortion != newValue {
@@ -96,11 +97,12 @@ public class AKRolandTB303Filter: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter cutoffFrequency: Cutoff frequency. (in Hertz)
-    /// - parameter resonance: Resonance, generally < 1, but not limited to it. Higher than 1 resonance values might cause aliasing, analogue synths generally allow resonances to be above 1.
-    /// - parameter distortion: Distortion. Value is typically 2.0; deviation from this can cause stability issues. 
-    /// - parameter resonanceAsymmetry: Asymmetry of resonance. Value is between 0-1
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - cutoffFrequency: Cutoff frequency. (in Hertz)
+    ///   - resonance: Resonance, generally < 1, but not limited to it. Higher than 1 resonance values might cause aliasing, analogue synths generally allow resonances to be above 1.
+    ///   - distortion: Distortion. Value is typically 2.0; deviation from this can cause stability issues.
+    ///   - resonanceAsymmetry: Asymmetry of resonance. Value is between 0-1
     ///
     public init(
         _ input: AKNode,
@@ -123,34 +125,34 @@ public class AKRolandTB303Filter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKRolandTB303FilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKRolandTB303Filter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKRolandTB303FilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKRolandTB303FilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        cutoffFrequencyParameter    = tree.value(forKey: "cutoffFrequency")    as? AUParameter
-        resonanceParameter          = tree.value(forKey: "resonance")          as? AUParameter
-        distortionParameter         = tree.value(forKey: "distortion")         as? AUParameter
-        resonanceAsymmetryParameter = tree.value(forKey: "resonanceAsymmetry") as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        cutoffFrequencyParameter    = tree.valueForKey("cutoffFrequency")    as? AUParameter
+        resonanceParameter          = tree.valueForKey("resonance")          as? AUParameter
+        distortionParameter         = tree.valueForKey("distortion")         as? AUParameter
+        resonanceAsymmetryParameter = tree.valueForKey("resonanceAsymmetry") as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.cutoffFrequencyParameter!.address {
                     self.cutoffFrequency = Double(value)
                 } else if address == self.resonanceParameter!.address {
@@ -161,11 +163,8 @@ public class AKRolandTB303Filter: AKNode, AKToggleable {
                     self.resonanceAsymmetry = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.cutoffFrequency = Float(cutoffFrequency)
         internalAU?.resonance = Float(resonance)
         internalAU?.distortion = Float(distortion)

@@ -10,9 +10,10 @@ import AVFoundation
 
 /// AudioKit version of Apple's HighShelfFilter Audio Unit
 ///
-/// - parameter input: Input node to process
-/// - parameter cutOffFrequency: Cut Off Frequency (Hz) ranges from 10000 to 22050 (Default: 10000)
-/// - parameter gain: Gain (dB) ranges from -40 to 40 (Default: 0)
+/// - Parameters:
+///   - input: Input node to process
+///   - cutOffFrequency: Cut Off Frequency (Hz) ranges from 10000 to 22050 (Default: 10000)
+///   - gain: Gain (dB) ranges from -40 to 40 (Default: 0)
 ///
 public class AKHighShelfFilter: AKNode, AKToggleable {
 
@@ -24,7 +25,7 @@ public class AKHighShelfFilter: AKNode, AKToggleable {
         componentFlagsMask: 0)
 
     internal var internalEffect = AVAudioUnitEffect()
-    internal var internalAU: AudioUnit? = nil
+    internal var internalAU: AudioUnit = nil
 
     private var mixer: AKMixer
 
@@ -33,12 +34,12 @@ public class AKHighShelfFilter: AKNode, AKToggleable {
         didSet {
             if cutOffFrequency < 10000 {
                 cutOffFrequency = 10000
-            }            
+            }
             if cutOffFrequency > 22050 {
                 cutOffFrequency = 22050
             }
             AudioUnitSetParameter(
-                internalAU!,
+                internalAU,
                 kHighShelfParam_CutOffFrequency,
                 kAudioUnitScope_Global, 0,
                 Float(cutOffFrequency), 0)
@@ -50,12 +51,12 @@ public class AKHighShelfFilter: AKNode, AKToggleable {
         didSet {
             if gain < -40 {
                 gain = -40
-            }            
+            }
             if gain > 40 {
                 gain = 40
             }
             AudioUnitSetParameter(
-                internalAU!,
+                internalAU,
                 kHighShelfParam_Gain,
                 kAudioUnitScope_Global, 0,
                 Float(gain), 0)
@@ -84,12 +85,13 @@ public class AKHighShelfFilter: AKNode, AKToggleable {
     public var isStarted = true
 
     // MARK: - Initialization
-    
+
     /// Initialize the high shelf filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter cutOffFrequency: Cut Off Frequency (Hz) ranges from 10000 to 22050 (Default: 10000)
-    /// - parameter gain: Gain (dB) ranges from -40 to 40 (Default: 0)
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - cutOffFrequency: Cut Off Frequency (Hz) ranges from 10000 to 22050 (Default: 10000)
+    ///   - gain: Gain (dB) ranges from -40 to 40 (Default: 0)
     ///
     public init(
         _ input: AKNode,
@@ -108,17 +110,17 @@ public class AKHighShelfFilter: AKNode, AKToggleable {
 
             internalEffect = AVAudioUnitEffect(audioComponentDescription: cd)
             super.init()
-            
-            AudioKit.engine.attach(internalEffect)
+
+            AudioKit.engine.attachNode(internalEffect)
             internalAU = internalEffect.audioUnit
             AudioKit.engine.connect((effectGain?.avAudioNode)!, to: internalEffect, format: AudioKit.format)
             AudioKit.engine.connect(internalEffect, to: mixer.avAudioNode, format: AudioKit.format)
             avAudioNode = mixer.avAudioNode
 
-            AudioUnitSetParameter(internalAU!, kHighShelfParam_CutOffFrequency, kAudioUnitScope_Global, 0, Float(cutOffFrequency), 0)
-            AudioUnitSetParameter(internalAU!, kHighShelfParam_Gain, kAudioUnitScope_Global, 0, Float(gain), 0)
+            AudioUnitSetParameter(internalAU, kHighShelfParam_CutOffFrequency, kAudioUnitScope_Global, 0, Float(cutOffFrequency), 0)
+            AudioUnitSetParameter(internalAU, kHighShelfParam_Gain, kAudioUnitScope_Global, 0, Float(gain), 0)
     }
-    
+
     // MARK: - Control
 
     /// Function to start, play, or activate the node, all do the same thing

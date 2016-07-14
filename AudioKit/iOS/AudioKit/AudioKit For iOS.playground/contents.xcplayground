@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<playground version='6.0' target-platform='ios' display-mode='raw'>
+<playground version='6.0' target-platform='ios' display-mode='rendered'>
     <pages>
         <page name='Table Of Contents'/>
         <page name='3D Panner'/>
         <page name='AKAudioFile Demo'/>
-        <page name='AKMagneto'/>
         <page name='Amplitude Envelope'/>
-        <page name='Auto Wah Wah'/>
         <page name='Audio Player'/>
         <page name='AutoPan Operation'/>
         <page name='AutoWah Operation'/>
+        <page name='Auto Wah Wah'/>
         <page name='Balancing Nodes'/>
         <page name='Band Pass Butterworth Filter'/>
         <page name='Band Pass Filter'/>
@@ -25,6 +24,7 @@
         <page name='Decimator'/>
         <page name='Delay'/>
         <page name='Distortion'/>
+        <page name='Drawbar Organ'/>
         <page name='Dripping Sounds'/>
         <page name='Drum Synthesizers'/>
         <page name='Dry Wet Mixer'/>
@@ -38,6 +38,7 @@
         <page name='Flute'/>
         <page name='FM Oscillator Operation'/>
         <page name='FM Oscillator'/>
+        <page name='FM Oscillator Bank'/>
         <page name='Formant Filter'/>
         <page name='General Purpose Oscillator'/>
         <page name='Graphic Equalizer'/>
@@ -59,9 +60,11 @@
         <page name='Mixing Nodes'/>
         <page name='Modal Resonance Filter Operation'/>
         <page name='Modal Resonance Filter'/>
+        <page name='Mono Synth'/>
         <page name='Moog Ladder Filter Operation'/>
         <page name='Moog Ladder Filter'/>
         <page name='Morphing Oscillator'/>
+        <page name='Morphing Oscillator Bank'/>
         <page name='Multi-tap Delay'/>
         <page name='MultiDelay Example'/>
         <page name='Newtons Cradle'/>
@@ -70,6 +73,7 @@
         <page name='Noise Operations'/>
         <page name='Non-Audio Tutorial'/>
         <page name='Oscillator'/>
+        <page name='Oscillator Bank'/>
         <page name='Output Waveform Plot'/>
         <page name='Parameter Ramp Time'/>
         <page name='Parametric Equalizer'/>
@@ -82,12 +86,13 @@
         <page name='Playback Speed'/>
         <page name='Plucked String Operation'/>
         <page name='Plucked String'/>
+        <page name='PWM Oscillator'/>
+        <page name='PWM Oscillator Bank'/>
         <page name='Ring Modulator'/>
         <page name='Roland TB-303 Filter'/>
         <page name='Rolling Output Plot'/>
         <page name='Sampler Instrument - EXS24'/>
         <page name='Sampler Instrument - Wav file'/>
-        <page name='Sawtooth Oscillator'/>
         <page name='Sawtooth Wave Oscillator Operation'/>
         <page name='Sean Costello Reverb Operation'/>
         <page name='Sean Costello Reverb'/>
@@ -97,7 +102,6 @@
         <page name='Splitting Nodes'/>
         <page name='Sporth Based Effect'/>
         <page name='Sporth Based Generator'/>
-        <page name='Square Wave Oscillator'/>
         <page name='Stereo Panning'/>
         <page name='String Resonator'/>
         <page name='Tanh Distortion'/>
@@ -109,11 +113,12 @@
         <page name='Tracking Frequency of Audio File'/>
         <page name='Tracking Frequency'/>
         <page name='Tremolo'/>
-        <page name='Triangular Wave Oscillator'/>
         <page name='Using Functions Part 2'/>
         <page name='Using Functions'/>
         <page name='Variable Delay Operation'/>
         <page name='Variable Delay'/>
-        <page name='Drawbar Organ'/>
+        <page name='AKAudioFile part2'/>
+        <page name='AKNodeRecorder'/>
+        <page name='AKAudioFile part 3 Async Process'/>
     </pages>
 </playground>

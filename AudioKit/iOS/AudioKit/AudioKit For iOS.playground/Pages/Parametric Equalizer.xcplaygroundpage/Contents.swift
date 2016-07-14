@@ -4,12 +4,13 @@
 //:
 //: ## Parametric Equalizer
 //: #### A parametric equalizer can be used to raise or lower specific frequencies or frequency bands. Live sound engineers often use parametric equalizers during a concert in order to keep feedback from occuring, as they allow much more precise control over the frequency spectrum than other types of equalizers. Acoustic engineers will also use them to tune a room. This node may be useful if you're building an app to do audio analysis.
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("mixloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "mixloop.wav", baseDir: .Resources)
+
+//: Here we set up a player to the loop the file's playback
+var player = try AKAudioPlayer(file: file)
 player.looping = true
 
 var parametricEQ = AKParametricEQ(player)
@@ -61,29 +62,29 @@ class PlaygroundView: AKPlaygroundView {
 
     //: Handle UI Events
 
-    func startLoop(_ part: String) {
+    func startLoop(part: String) {
         player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
         player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
@@ -99,7 +100,7 @@ class PlaygroundView: AKPlaygroundView {
     func bypass() {
         parametricEQ.bypass()
     }
-    
+
     func setCenterFreq(slider: Slider) {
         parametricEQ.centerFrequency = Double(slider.value)
         let centerFrequency = String(format: "%0.1f", parametricEQ.centerFrequency)
@@ -120,10 +121,10 @@ class PlaygroundView: AKPlaygroundView {
         gainLabel!.text = "gain: \(gain) dB"
         printCode()
     }
-    
+
     func printCode() {
         // Here we're just printing out the preset so it can be copy and pasted into code
-        
+
         print("public func presetXXXXXX() {")
         print("    centerFrequency = \(String(format: "%0.3f", parametricEQ.centerFrequency))")
         print("    q = \(String(format: "%0.3f", parametricEQ.q))")
@@ -133,7 +134,7 @@ class PlaygroundView: AKPlaygroundView {
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height: 1000))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

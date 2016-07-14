@@ -10,10 +10,11 @@ import AVFoundation
 
 /// This is an implementation of Zoelzer's parametric equalizer filter.
 ///
-/// - parameter input: Input node to process
-/// - parameter centerFrequency: Center frequency.
-/// - parameter gain: Amount at which the center frequency value shall be increased or decreased. A value of 1 is a flat response.
-/// - parameter q: Q of the filter. sqrt(0.5) is no resonance.
+/// - Parameters:
+///   - input: Input node to process
+///   - centerFrequency: Center frequency.
+///   - gain: Amount at which the center frequency value shall be increased or decreased. A value of 1 is a flat response.
+///   - q: Q of the filter. sqrt(0.5) is no resonance.
 ///
 public class AKPeakingParametricEqualizerFilter: AKNode, AKToggleable {
 
@@ -82,10 +83,11 @@ public class AKPeakingParametricEqualizerFilter: AKNode, AKToggleable {
 
     /// Initialize this equalizer node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter centerFrequency: Center frequency.
-    /// - parameter gain: Amount at which the center frequency value shall be increased or decreased. A value of 1 is a flat response.
-    /// - parameter q: Q of the filter. sqrt(0.5) is no resonance.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - centerFrequency: Center frequency.
+    ///   - gain: Amount at which the center frequency value shall be increased or decreased. A value of 1 is a flat response.
+    ///   - q: Q of the filter. sqrt(0.5) is no resonance.
     ///
     public init(
         _ input: AKNode,
@@ -106,33 +108,33 @@ public class AKPeakingParametricEqualizerFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKPeakingParametricEqualizerFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKPeakingParametricEqualizerFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKPeakingParametricEqualizerFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKPeakingParametricEqualizerFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        centerFrequencyParameter = tree.value(forKey: "centerFrequency") as? AUParameter
-        gainParameter            = tree.value(forKey: "gain")            as? AUParameter
-        qParameter               = tree.value(forKey: "q")               as? AUParameter
+        centerFrequencyParameter = tree.valueForKey("centerFrequency") as? AUParameter
+        gainParameter            = tree.valueForKey("gain")            as? AUParameter
+        qParameter               = tree.valueForKey("q")               as? AUParameter
 
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.centerFrequencyParameter!.address {
                     self.centerFrequency = Double(value)
                 } else if address == self.gainParameter!.address {
@@ -141,11 +143,8 @@ public class AKPeakingParametricEqualizerFilter: AKNode, AKToggleable {
                     self.q = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.centerFrequency = Float(centerFrequency)
         internalAU?.gain = Float(gain)
         internalAU?.q = Float(q)

@@ -11,9 +11,10 @@ import AVFoundation
 /// These filters are Butterworth second-order IIR filters. They offer an almost
 /// flat passband and very good precision and stopband attenuation.
 ///
-/// - parameter input: Input node to process
-/// - parameter centerFrequency: Center frequency. (in Hertz)
-/// - parameter bandwidth: Bandwidth. (in Hertz)
+/// - Parameters:
+///   - input: Input node to process
+///   - centerFrequency: Center frequency. (in Hertz)
+///   - bandwidth: Bandwidth. (in Hertz)
 ///
 public class AKBandRejectButterworthFilter: AKNode, AKToggleable {
 
@@ -36,7 +37,7 @@ public class AKBandRejectButterworthFilter: AKNode, AKToggleable {
     }
 
     /// Center frequency. (in Hertz)
-    public var centerFrequency: Double = 3000 {
+    public var centerFrequency: Double = 3000.0 {
         willSet {
             if centerFrequency != newValue {
                 if internalAU!.isSetUp() {
@@ -48,7 +49,7 @@ public class AKBandRejectButterworthFilter: AKNode, AKToggleable {
         }
     }
     /// Bandwidth. (in Hertz)
-    public var bandwidth: Double = 2000 {
+    public var bandwidth: Double = 2000.0 {
         willSet {
             if bandwidth != newValue {
                 if internalAU!.isSetUp() {
@@ -69,14 +70,15 @@ public class AKBandRejectButterworthFilter: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter centerFrequency: Center frequency. (in Hertz)
-    /// - parameter bandwidth: Bandwidth. (in Hertz)
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - centerFrequency: Center frequency. (in Hertz)
+    ///   - bandwidth: Bandwidth. (in Hertz)
     ///
     public init(
         _ input: AKNode,
-        centerFrequency: Double = 3000,
-        bandwidth: Double = 2000) {
+        centerFrequency: Double = 3000.0,
+        bandwidth: Double = 2000.0) {
 
         self.centerFrequency = centerFrequency
         self.bandwidth = bandwidth
@@ -90,44 +92,40 @@ public class AKBandRejectButterworthFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKBandRejectButterworthFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKBandRejectButterworthFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKBandRejectButterworthFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKBandRejectButterworthFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        centerFrequencyParameter = tree.value(forKey: "centerFrequency") as? AUParameter
-        bandwidthParameter       = tree.value(forKey: "bandwidth")       as? AUParameter
+        centerFrequencyParameter = tree.valueForKey("centerFrequency") as? AUParameter
+        bandwidthParameter       = tree.valueForKey("bandwidth")       as? AUParameter
 
-
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.centerFrequencyParameter!.address {
                     self.centerFrequency = Double(value)
                 } else if address == self.bandwidthParameter!.address {
                     self.bandwidth = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.centerFrequency = Float(centerFrequency)
         internalAU?.bandwidth = Float(bandwidth)
     }

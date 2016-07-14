@@ -10,10 +10,11 @@ import AVFoundation
 
 /// Faust-based pitch shfiter
 ///
-/// - parameter input: Input node to process
-/// - parameter shift: Pitch shift (in semitones)
-/// - parameter windowSize: Window size (in samples)
-/// - parameter crossfade: Crossfade (in samples)
+/// - Parameters:
+///   - input: Input node to process
+///   - shift: Pitch shift (in semitones)
+///   - windowSize: Window size (in samples)
+///   - crossfade: Crossfade (in samples)
 ///
 public class AKPitchShifter: AKNode, AKToggleable {
 
@@ -28,7 +29,7 @@ public class AKPitchShifter: AKNode, AKToggleable {
 
     /// Ramp Time represents the speed at which parameters are allowed to change
     public var rampTime: Double = AKSettings.rampTime {
-        willSet(newValue) {
+        willSet {
             if rampTime != newValue {
                 internalAU?.rampTime = newValue
                 internalAU?.setUpParameterRamp()
@@ -38,7 +39,7 @@ public class AKPitchShifter: AKNode, AKToggleable {
 
     /// Pitch shift (in semitones)
     public var shift: Double = 0 {
-        willSet(newValue) {
+        willSet {
             if shift != newValue {
                 if internalAU!.isSetUp() {
                     shiftParameter?.setValue(Float(newValue), originator: token!)
@@ -50,7 +51,7 @@ public class AKPitchShifter: AKNode, AKToggleable {
     }
     /// Window size (in samples)
     public var windowSize: Double = 1024 {
-        willSet(newValue) {
+        willSet {
             if windowSize != newValue {
                 if internalAU!.isSetUp() {
                     windowSizeParameter?.setValue(Float(newValue), originator: token!)
@@ -62,7 +63,7 @@ public class AKPitchShifter: AKNode, AKToggleable {
     }
     /// Crossfade (in samples)
     public var crossfade: Double = 512 {
-        willSet(newValue) {
+        willSet {
             if crossfade != newValue {
                 if internalAU!.isSetUp() {
                     crossfadeParameter?.setValue(Float(newValue), originator: token!)
@@ -82,16 +83,17 @@ public class AKPitchShifter: AKNode, AKToggleable {
 
     /// Initialize this pitchshifter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter shift: Pitch shift (in semitones)
-    /// - parameter windowSize: Window size (in samples)
-    /// - parameter crossfade: Crossfade (in samples)
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - shift: Pitch shift (in semitones)
+    ///   - windowSize: Window size (in samples)
+    ///   - crossfade: Crossfade (in samples)
     ///
     public init(
         _ input: AKNode,
         shift: Double = 0,
-        windowSize: Double = 1024.0,
-        crossfade: Double = 512.0) {
+        windowSize: Double = 1024,
+        crossfade: Double = 512) {
 
         self.shift = shift
         self.windowSize = windowSize
@@ -106,33 +108,33 @@ public class AKPitchShifter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKPitchShifterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKPitchShifter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKPitchShifterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKPitchShifterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        shiftParameter      = tree.value(forKey: "shift")      as? AUParameter
-        windowSizeParameter = tree.value(forKey: "windowSize") as? AUParameter
-        crossfadeParameter  = tree.value(forKey: "crossfade")  as? AUParameter
+        shiftParameter      = tree.valueForKey("shift")      as? AUParameter
+        windowSizeParameter = tree.valueForKey("windowSize") as? AUParameter
+        crossfadeParameter  = tree.valueForKey("crossfade")  as? AUParameter
 
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.shiftParameter!.address {
                     self.shift = Double(value)
                 } else if address == self.windowSizeParameter!.address {
@@ -141,11 +143,8 @@ public class AKPitchShifter: AKNode, AKToggleable {
                     self.crossfade = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.shift = Float(shift)
         internalAU?.windowSize = Float(windowSize)
         internalAU?.crossfade = Float(crossfade)

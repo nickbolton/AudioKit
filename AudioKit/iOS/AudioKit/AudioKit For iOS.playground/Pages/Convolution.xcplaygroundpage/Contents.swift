@@ -4,14 +4,16 @@
 //:
 //: ## Convolution
 //: ### Allows you to create a large variety of effects, usually reverbs or environments, but it could also be for modeling.
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("drumloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "drumloop.wav", baseDir: .Resources)
+
+let player = try AKAudioPlayer(file: file)
 player.looping = true
 
+
+let bundle = NSBundle.mainBundle()
 let stairwell = bundle.URLForResource("Impulse Responses/stairwell", withExtension: "wav")!
 let dish = bundle.URLForResource("Impulse Responses/dish", withExtension: "wav")!
 
@@ -52,29 +54,29 @@ class PlaygroundView: AKPlaygroundView {
         addSlider(#selector(setIRMix), value: mixer.balance)
     }
 
-    func startLoop(_ part: String) {
+    func startLoop(part: String) {
         player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
         player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
@@ -92,5 +94,5 @@ class PlaygroundView: AKPlaygroundView {
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height:400))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view

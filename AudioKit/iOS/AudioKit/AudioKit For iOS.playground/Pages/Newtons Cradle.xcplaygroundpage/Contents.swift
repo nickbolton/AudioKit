@@ -1,10 +1,11 @@
 import UIKit
-import PlaygroundSupport
+import XCPlayground
 
 import AudioKit
-let bundle = Bundle.main()
-let file = bundle.pathForResource("click", ofType: "wav")
-var tink = AKAudioPlayer(file!)
+
+
+let file = try AKAudioFile(readFileName: "click.wav", baseDir: .Resources)
+var tink = try AKAudioPlayer(file: file)
 
 var reverb = AKCostelloReverb(tink)
 let gravity = 0.166
@@ -52,7 +53,7 @@ for attachmentBehavior in newtonsCradle.attachmentBehaviors {
     attachmentBehavior.length = 100
 }
 
-PlaygroundPage.current.liveView = newtonsCradle
+XCPlaygroundPage.currentPage.liveView = newtonsCradle
 
 public class NewtonsCradle: UIView, UICollisionBehaviorDelegate {
     

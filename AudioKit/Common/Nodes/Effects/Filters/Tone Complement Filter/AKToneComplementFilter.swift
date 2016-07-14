@@ -10,8 +10,9 @@ import AVFoundation
 
 /// A complement to the AKLowPassFilter.
 ///
-/// - parameter input: Input node to process
-/// - parameter halfPowerPoint: Half-Power Point in Hertz. Half power is defined as peak power / square root of 2.
+/// - Parameters:
+///   - input: Input node to process
+///   - halfPowerPoint: Half-Power Point in Hertz. Half power is defined as peak power / square root of 2.
 ///
 public class AKToneComplementFilter: AKNode, AKToggleable {
 
@@ -33,7 +34,7 @@ public class AKToneComplementFilter: AKNode, AKToggleable {
     }
 
     /// Half-Power Point in Hertz. Half power is defined as peak power / square root of 2.
-    public var halfPowerPoint: Double = 1000 {
+    public var halfPowerPoint: Double = 1000.0 {
         willSet {
             if halfPowerPoint != newValue {
                 if internalAU!.isSetUp() {
@@ -54,12 +55,13 @@ public class AKToneComplementFilter: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter halfPowerPoint: Half-Power Point in Hertz. Half power is defined as peak power / square root of 2.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - halfPowerPoint: Half-Power Point in Hertz. Half power is defined as peak power / square root of 2.
     ///
     public init(
         _ input: AKNode,
-        halfPowerPoint: Double = 1000) {
+        halfPowerPoint: Double = 1000.0) {
 
         self.halfPowerPoint = halfPowerPoint
 
@@ -72,40 +74,37 @@ public class AKToneComplementFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKToneComplementFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKToneComplementFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKToneComplementFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKToneComplementFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        halfPowerPointParameter = tree.value(forKey: "halfPowerPoint") as? AUParameter
+        halfPowerPointParameter = tree.valueForKey("halfPowerPoint") as? AUParameter
 
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.halfPowerPointParameter!.address {
                     self.halfPowerPoint = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.halfPowerPoint = Float(halfPowerPoint)
     }
 

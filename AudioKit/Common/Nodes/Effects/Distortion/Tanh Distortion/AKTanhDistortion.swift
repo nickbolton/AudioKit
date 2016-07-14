@@ -10,11 +10,12 @@ import AVFoundation
 
 /// Distortion using a modified hyperbolic tangent function.
 ///
-/// - parameter input: Input node to process
-/// - parameter pregain: Determines the amount of gain applied to the signal before waveshaping. A value of 1 gives slight distortion.
-/// - parameter postgain: Gain applied after waveshaping
-/// - parameter postiveShapeParameter: Shape of the positive part of the signal. A value of 0 gets a flat clip.
-/// - parameter negativeShapeParameter: Like the positive shape parameter, only for the negative part.
+/// - Parameters:
+///   - input: Input node to process
+///   - pregain: Determines the amount of gain applied to the signal before waveshaping. A value of 1 gives slight distortion.
+///   - postgain: Gain applied after waveshaping
+///   - postiveShapeParameter: Shape of the positive part of the signal. A value of 0 gets a flat clip.
+///   - negativeShapeParameter: Like the positive shape parameter, only for the negative part.
 ///
 public class AKTanhDistortion: AKNode, AKToggleable {
 
@@ -96,11 +97,12 @@ public class AKTanhDistortion: AKNode, AKToggleable {
 
     /// Initialize this distortion node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter pregain: Determines the amount of gain applied to the signal before waveshaping. A value of 1 gives slight distortion.
-    /// - parameter postgain: Gain applied after waveshaping
-    /// - parameter postiveShapeParameter: Shape of the positive part of the signal. A value of 0 gets a flat clip.
-    /// - parameter negativeShapeParameter: Like the positive shape parameter, only for the negative part.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - pregain: Determines the amount of gain applied to the signal before waveshaping. A value of 1 gives slight distortion.
+    ///   - postgain: Gain applied after waveshaping
+    ///   - postiveShapeParameter: Shape of the positive part of the signal. A value of 0 gets a flat clip.
+    ///   - negativeShapeParameter: Like the positive shape parameter, only for the negative part.
     ///
     public init(
         _ input: AKNode,
@@ -123,34 +125,34 @@ public class AKTanhDistortion: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKTanhDistortionAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKTanhDistortion",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKTanhDistortionAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKTanhDistortionAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        pregainParameter                = tree.value(forKey: "pregain")                as? AUParameter
-        postgainParameter               = tree.value(forKey: "postgain")               as? AUParameter
-        postiveShapeParameterParameter  = tree.value(forKey: "postiveShapeParameter")  as? AUParameter
-        negativeShapeParameterParameter = tree.value(forKey: "negativeShapeParameter") as? AUParameter
+        pregainParameter                = tree.valueForKey("pregain")                as? AUParameter
+        postgainParameter               = tree.valueForKey("postgain")               as? AUParameter
+        postiveShapeParameterParameter  = tree.valueForKey("postiveShapeParameter")  as? AUParameter
+        negativeShapeParameterParameter = tree.valueForKey("negativeShapeParameter") as? AUParameter
 
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.pregainParameter!.address {
                     self.pregain = Double(value)
                 } else if address == self.postgainParameter!.address {
@@ -161,11 +163,8 @@ public class AKTanhDistortion: AKNode, AKToggleable {
                     self.negativeShapeParameter = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.pregain = Float(pregain)
         internalAU?.postgain = Float(postgain)
         internalAU?.postiveShapeParameter = Float(postiveShapeParameter)

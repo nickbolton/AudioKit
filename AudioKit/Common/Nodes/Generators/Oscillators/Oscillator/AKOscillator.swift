@@ -11,10 +11,11 @@ import AVFoundation
 /// Reads from the table sequentially and repeatedly at given frequency. Linear
 /// interpolation is applied for table look up from internal phase values.
 ///
-/// - parameter frequency: Frequency in cycles per second
-/// - parameter amplitude: Output Amplitude.
-/// - parameter detuningOffset: Frequency offset in Hz.
-/// - parameter detuningMultiplier: Frequency detuning multiplier
+/// - Parameters:
+///   - frequency: Frequency in cycles per second
+///   - amplitude: Output Amplitude.
+///   - detuningOffset: Frequency offset in Hz.
+///   - detuningMultiplier: Frequency detuning multiplier
 ///
 public class AKOscillator: AKVoice {
 
@@ -29,7 +30,7 @@ public class AKOscillator: AKVoice {
     private var amplitudeParameter: AUParameter?
     private var detuningOffsetParameter: AUParameter?
     private var detuningMultiplierParameter: AUParameter?
-    
+
     /// Ramp Time represents the speed at which parameters are allowed to change
     public var rampTime: Double = AKSettings.rampTime {
         willSet {
@@ -39,7 +40,7 @@ public class AKOscillator: AKVoice {
             }
         }
     }
-    
+
     /// In cycles per second, or Hz.
     public var frequency: Double = 440 {
         willSet {
@@ -98,22 +99,18 @@ public class AKOscillator: AKVoice {
     }
 
     // MARK: - Initialization
-    
-    /// Initialize the oscillator with defaults
-    override public convenience init() {
-        self.init(waveform: AKTable(.Sine))
-    }
 
     /// Initialize this oscillator node
     ///
-    /// - parameter waveform:  The waveform of oscillation
-    /// - parameter frequency: Frequency in cycles per second
-    /// - parameter amplitude: Output Amplitude.
-    /// - parameter detuningOffset: Frequency offset in Hz.
-    /// - parameter detuningMultiplier: Frequency detuning multiplier
+    /// - Parameters:
+    ///   - waveform:  The waveform of oscillation
+    ///   - frequency: Frequency in cycles per second
+    ///   - amplitude: Output Amplitude.
+    ///   - detuningOffset: Frequency offset in Hz.
+    ///   - detuningMultiplier: Frequency detuning multiplier
     ///
     public init(
-        waveform: AKTable,
+        waveform: AKTable = AKTable(.Sine),
         frequency: Double = 440,
         amplitude: Double = 1,
         detuningOffset: Double = 0,
@@ -186,12 +183,6 @@ public class AKOscillator: AKVoice {
         internalAU?.detuningOffset = Float(detuningOffset)
         internalAU?.detuningMultiplier = Float(detuningMultiplier)
 
-    }
-
-    /// Function create an identical new node for use in creating polyphonic instruments
-    override public func duplicate() -> AKVoice {
-        let copy = AKOscillator(waveform: self.waveform!, frequency: self.frequency, amplitude: self.amplitude, detuningOffset: self.detuningOffset, detuningMultiplier: self.detuningMultiplier)
-        return copy
     }
 
     /// Function to start, play, or activate the node, all do the same thing

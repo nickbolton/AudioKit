@@ -12,10 +12,11 @@ import AVFoundation
 /// grains. Overlapping will occur when 1/freq < dec, but there is no upper
 /// limit on the number of overlaps.
 ///
-/// - parameter input: Input node to process
-/// - parameter centerFrequency: Center frequency.
-/// - parameter attackDuration: Impulse response attack time (in seconds).
-/// - parameter decayDuration: Impulse reponse decay time (in seconds)
+/// - Parameters:
+///   - input: Input node to process
+///   - centerFrequency: Center frequency.
+///   - attackDuration: Impulse response attack time (in seconds).
+///   - decayDuration: Impulse reponse decay time (in seconds)
 ///
 public class AKFormantFilter: AKNode, AKToggleable {
 
@@ -84,10 +85,11 @@ public class AKFormantFilter: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter centerFrequency: Center frequency.
-    /// - parameter attackDuration: Impulse response attack time (in seconds).
-    /// - parameter decayDuration: Impulse reponse decay time (in seconds)
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - centerFrequency: Center frequency.
+    ///   - attackDuration: Impulse response attack time (in seconds).
+    ///   - decayDuration: Impulse reponse decay time (in seconds)
     ///
     public init(
         _ input: AKNode,
@@ -108,33 +110,33 @@ public class AKFormantFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKFormantFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKFormantFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKFormantFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKFormantFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        centerFrequencyParameter = tree.value(forKey: "centerFrequency") as? AUParameter
-        attackDurationParameter  = tree.value(forKey: "attackDuration")  as? AUParameter
-        decayDurationParameter   = tree.value(forKey: "decayDuration")   as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        centerFrequencyParameter = tree.valueForKey("centerFrequency") as? AUParameter
+        attackDurationParameter  = tree.valueForKey("attackDuration")  as? AUParameter
+        decayDurationParameter   = tree.valueForKey("decayDuration")   as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.centerFrequencyParameter!.address {
                     self.centerFrequency = Double(value)
                 } else if address == self.attackDurationParameter!.address {
@@ -143,11 +145,8 @@ public class AKFormantFilter: AKNode, AKToggleable {
                     self.decayDuration = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.centerFrequency = Float(centerFrequency)
         internalAU?.attackDuration = Float(attackDuration)
         internalAU?.decayDuration = Float(decayDuration)

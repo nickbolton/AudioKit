@@ -10,11 +10,12 @@ import AVFoundation
 
 /// Triggerable classic ADSR envelope
 ///
-/// - parameter input: Input node to process
-/// - parameter attackDuration: Attack time
-/// - parameter decayDuration: Decay time
-/// - parameter sustainLevel: Sustain Level
-/// - parameter releaseDuration: Release time
+/// - Parameters:
+///   - input: Input node to process
+///   - attackDuration: Attack time
+///   - decayDuration: Decay time
+///   - sustainLevel: Sustain Level
+///   - releaseDuration: Release time
 ///
 public class AKAmplitudeEnvelope: AKNode, AKToggleable {
 
@@ -96,11 +97,12 @@ public class AKAmplitudeEnvelope: AKNode, AKToggleable {
 
     /// Initialize this envelope node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter attackDuration: Attack time
-    /// - parameter decayDuration: Decay time
-    /// - parameter sustainLevel: Sustain Level
-    /// - parameter releaseDuration: Release time
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - attackDuration: Attack time
+    ///   - decayDuration: Decay time
+    ///   - sustainLevel: Sustain Level
+    ///   - releaseDuration: Release time
     ///
     public init(
         _ input: AKNode,
@@ -123,34 +125,34 @@ public class AKAmplitudeEnvelope: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKAmplitudeEnvelopeAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKAmplitudeEnvelope",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKAmplitudeEnvelopeAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKAmplitudeEnvelopeAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        attackDurationParameter  = tree.value(forKey: "attackDuration")  as? AUParameter
-        decayDurationParameter   = tree.value(forKey: "decayDuration")   as? AUParameter
-        sustainLevelParameter    = tree.value(forKey: "sustainLevel")    as? AUParameter
-        releaseDurationParameter = tree.value(forKey: "releaseDuration") as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        attackDurationParameter  = tree.valueForKey("attackDuration")  as? AUParameter
+        decayDurationParameter   = tree.valueForKey("decayDuration")   as? AUParameter
+        sustainLevelParameter    = tree.valueForKey("sustainLevel")    as? AUParameter
+        releaseDurationParameter = tree.valueForKey("releaseDuration") as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.attackDurationParameter!.address {
                     self.attackDuration = Double(value)
                 } else if address == self.decayDurationParameter!.address {
@@ -161,11 +163,8 @@ public class AKAmplitudeEnvelope: AKNode, AKToggleable {
                     self.releaseDuration = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.attackDuration = Float(attackDuration)
         internalAU?.decayDuration = Float(decayDuration)
         internalAU?.sustainLevel = Float(sustainLevel)

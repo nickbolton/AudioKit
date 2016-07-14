@@ -15,9 +15,10 @@ import AVFoundation
 /// fundamentalFrequency.  This operation can be used to simulate sympathetic
 /// resonances to an input signal.
 ///
-/// - parameter input: Input node to process
-/// - parameter fundamentalFrequency: Fundamental frequency of string.
-/// - parameter feedback: Feedback amount (value between 0-1). A value close to 1 creates a slower decay and a more pronounced resonance. Small values may leave the input signal unaffected. Depending on the filter frequency, typical values are > .9.
+/// - Parameters:
+///   - input: Input node to process
+///   - fundamentalFrequency: Fundamental frequency of string.
+///   - feedback: Feedback amount (value between 0-1). A value close to 1 creates a slower decay and a more pronounced resonance. Small values may leave the input signal unaffected. Depending on the filter frequency, typical values are > .9.
 ///
 public class AKStringResonator: AKNode, AKToggleable {
 
@@ -73,9 +74,10 @@ public class AKStringResonator: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter fundamentalFrequency: Fundamental frequency of string.
-    /// - parameter feedback: Feedback amount (value between 0-1). A value close to 1 creates a slower decay and a more pronounced resonance. Small values may leave the input signal unaffected. Depending on the filter frequency, typical values are > .9.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - fundamentalFrequency: Fundamental frequency of string.
+    ///   - feedback: Feedback amount (value between 0-1). A value close to 1 creates a slower decay and a more pronounced resonance. Small values may leave the input signal unaffected. Depending on the filter frequency, typical values are > .9.
     ///
     public init(
         _ input: AKNode,
@@ -94,43 +96,40 @@ public class AKStringResonator: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKStringResonatorAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKStringResonator",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKStringResonatorAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKStringResonatorAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        fundamentalFrequencyParameter = tree.value(forKey: "fundamentalFrequency") as? AUParameter
-        feedbackParameter             = tree.value(forKey: "feedback")             as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        fundamentalFrequencyParameter = tree.valueForKey("fundamentalFrequency") as? AUParameter
+        feedbackParameter             = tree.valueForKey("feedback")             as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.fundamentalFrequencyParameter!.address {
                     self.fundamentalFrequency = Double(value)
                 } else if address == self.feedbackParameter!.address {
                     self.feedback = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.fundamentalFrequency = Float(fundamentalFrequency)
         internalAU?.feedback = Float(feedback)
     }

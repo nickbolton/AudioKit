@@ -7,13 +7,11 @@
 import XCPlayground
 import AudioKit
 
+let file = try AKAudioFile(readFileName: "mixloop.wav", baseDir: .Resources)
 
-let file = try? AKAudioFile(forReadingFileName: "mixloop", withExtension: "wav", fromBaseDirectory: .resources)
-
-let player = try? AKAudioPlayer(file: file!)
-
-player!.looping = true
-var moogLadder = AKMoogLadder(player!)
+let player = try AKAudioPlayer(file: file)
+player.looping = true
+var moogLadder = AKMoogLadder(player)
 
 //: Set the parameters of the Moog Ladder Filter here.
 moogLadder.cutoffFrequency = 300 // Hz
@@ -22,7 +20,7 @@ moogLadder.resonance = 0.6
 AudioKit.output = moogLadder
 AudioKit.start()
 
-player!.play()
+player.play()
 
 //: User Interface Set up
 class PlaygroundView: AKPlaygroundView {
@@ -30,6 +28,9 @@ class PlaygroundView: AKPlaygroundView {
     var cutoffFrequencyLabel: Label?
     var resonanceLabel: Label?
     var rampTimeLabel: Label?
+    var cutoffFrequencySlider: Slider?
+    var resonanceSlider: Slider?
+    var rampTimeSlider: Slider?
     
     override func setup() {
         addTitle("Moog Ladder Filter")
@@ -43,22 +44,25 @@ class PlaygroundView: AKPlaygroundView {
         addButton("Stop", action: #selector(stop))
 
         cutoffFrequencyLabel = addLabel("Cutoff Frequency: \(moogLadder.cutoffFrequency)")
-        addSlider(#selector(setCutoffFrequency), value: moogLadder.cutoffFrequency, minimum: 0, maximum: 5000)
+        cutoffFrequencySlider = addSlider(#selector(setCutoffFrequency), value: moogLadder.cutoffFrequency, minimum: 0, maximum: 5000)
 
         resonanceLabel = addLabel("Resonance: \(moogLadder.resonance)")
-        addSlider(#selector(setResonance), value: moogLadder.resonance, minimum: 0, maximum: 0.99)
+        resonanceSlider =  addSlider(#selector(setResonance), value: moogLadder.resonance, minimum: 0, maximum: 0.99)
         
         rampTimeLabel = addLabel("Ramp Time: \(moogLadder.rampTime)")
-        addSlider(#selector(setRampTime), value: moogLadder.rampTime, minimum: 0, maximum: 2)
+        rampTimeSlider = addSlider(#selector(setRampTime), value: moogLadder.rampTime, minimum: 0, maximum: 2)
+        
+        addButton("Fog Filter", action: #selector(presetFogMoogLadder))
+        addButton("Dull Noise", action: #selector(presetDullNoiseMoogLadder))
     }
 
     func startLoop(part: String) {
-        player!.stop()
-        let file = try? AKAudioFile(forReadingFileName: "\(part)loop", withExtension: "wav", fromBaseDirectory: .resources)
-        player!.replaceAudioFile(file!)
-        player!.play()
+        player.stop()
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
+        player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
@@ -80,7 +84,7 @@ class PlaygroundView: AKPlaygroundView {
     }
 
     func stop() {
-        player!.stop()
+        player.stop()
     }
 
     func setCutoffFrequency(slider: Slider) {
@@ -100,6 +104,42 @@ class PlaygroundView: AKPlaygroundView {
         let rampTime = String(format: "%0.3f", moogLadder.rampTime)
         rampTimeLabel!.text = "Ramp Time: \(rampTime)"
     }
+    
+    
+    //: Audition Presets
+    
+    func presetFogMoogLadder() {
+        moogLadder.presetFogMoogLadder()
+        updateUI()
+    }
+    
+    func presetDullNoiseMoogLadder() {
+        moogLadder.presetDullNoiseMoogLadder()
+        updateUI()
+    }
+    
+    func updateUI() {
+        updateTextFields()
+        updateSliders()
+        printCode()
+    }
+    
+    func updateSliders() {
+        cutoffFrequencySlider?.value = Float(moogLadder.cutoffFrequency)
+        resonanceSlider?.value = Float(moogLadder.resonance)
+        rampTimeSlider?.value = Float(moogLadder.rampTime)
+    }
+    
+    func updateTextFields() {
+        let cutoffFrequency = String(format: "%0.3f", moogLadder.cutoffFrequency)
+        cutoffFrequencyLabel!.text = " Cutoff Frequency: \(cutoffFrequency)"
+        
+        let resonance = String(format: "%0.3f", moogLadder.resonance)
+        resonanceLabel!.text = "Resonance: \(resonance)"
+        
+        let rampTime = String(format: "%0.3f", moogLadder.rampTime)
+        rampTimeLabel!.text = "Ramp Time: \(rampTime)"
+    }
 
     func printCode() {
         // Here we're just printing out the preset so it can be copy and pasted into code
@@ -107,6 +147,7 @@ class PlaygroundView: AKPlaygroundView {
         print("public func presetXXXXXX() {")
         print("    cutoffFrequency = \(String(format: "%0.3f", moogLadder.cutoffFrequency))")
         print("    resonance = \(String(format: "%0.3f", moogLadder.resonance))")
+        print("    ramp time = \(String(format: "%0.3f", moogLadder.rampTime))")
         print("}\n")
     }
 }

@@ -5,12 +5,13 @@
 //: ## Tanh Distortion
 //: ##
 //:
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("guitarloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "guitarloop.wav", baseDir: .Resources)
+
+//: Here we set up a player to the loop the file's playback
+var player = try AKAudioPlayer(file: file)
 player.looping = true
 
 var distortion = AKTanhDistortion(player)
@@ -28,16 +29,16 @@ player.play()
 //: User Interface Set up
 
 class PlaygroundView: AKPlaygroundView {
-    
+
     //: UI Elements we'll need to be able to access
     var pregainLabel: Label?
     var postgainLabel: Label?
     var postiveShapeParameterLabel: Label?
     var negativeShapeParameterLabel: Label?
-    
+
     override func setup() {
         addTitle("Tanh Distortion")
-        
+
         addLabel("Audio Playback")
         addButton("Drums", action: #selector(startDrumLoop))
         addButton("Bass", action: #selector(startBassLoop))
@@ -45,12 +46,12 @@ class PlaygroundView: AKPlaygroundView {
         addButton("Lead", action: #selector(startLeadLoop))
         addButton("Mix", action: #selector(startMixLoop))
         addButton("Stop", action: #selector(stop))
-        
+
         addLabel("Distortion Parameters")
-        
+
         addButton("Process", action: #selector(process))
         addButton("Bypass", action: #selector(bypass))
-        
+
         pregainLabel = addLabel("Pregain: \(distortion.pregain) Hz")
         addSlider(#selector(setPregain), value: distortion.pregain, minimum: 0, maximum: 10)
 
@@ -64,48 +65,48 @@ class PlaygroundView: AKPlaygroundView {
         addSlider(#selector(setNegativeShapeParameter), value: distortion.negativeShapeParameter, minimum: -10, maximum: 10)
 
     }
-    
+
     //: Handle UI Events
-    
-    func startLoop(_ part: String) {
+
+    func startLoop(part: String) {
         player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
         player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
-    
+
     func stop() {
         player.stop()
     }
-    
+
     func process() {
         distortion.start()
     }
-    
+
     func bypass() {
         distortion.bypass()
     }
-    
+
     func setPregain(slider: Slider) {
         distortion.pregain = Double(slider.value)
         let pregain = String(format: "%0.2f", distortion.pregain)
@@ -133,10 +134,10 @@ class PlaygroundView: AKPlaygroundView {
         negativeShapeParameterLabel!.text = "Negative Shape Parameter: \(negativeShapeParameter)"
         printCode()
     }
-    
+
     func printCode() {
         // Here we're just printing out the preset so it can be copy and pasted into code
-        
+
         print("public func presetXXXXXX() {")
         print("    pregain = \(String(format: "%0.3f", distortion.pregain))")
         print("    postgain = \(String(format: "%0.3f", distortion.postgain))")
@@ -147,7 +148,7 @@ class PlaygroundView: AKPlaygroundView {
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height: 550))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

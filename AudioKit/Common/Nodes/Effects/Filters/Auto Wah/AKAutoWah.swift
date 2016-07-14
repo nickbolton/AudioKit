@@ -10,10 +10,11 @@ import AVFoundation
 
 /// An automatic wah effect, ported from Guitarix via Faust.
 ///
-/// - parameter input: Input node to process
-/// - parameter wah: Wah Amount
-/// - parameter mix: Dry/Wet Mix
-/// - parameter amplitude: Overall level
+/// - Parameters:
+///   - input: Input node to process
+///   - wah: Wah Amount
+///   - mix: Dry/Wet Mix
+///   - amplitude: Overall level
 ///
 public class AKAutoWah: AKNode, AKToggleable {
 
@@ -37,7 +38,7 @@ public class AKAutoWah: AKNode, AKToggleable {
     }
 
     /// Wah Amount
-    public var wah: Double = 0 {
+    public var wah: Double = 0.0 {
         willSet {
             if wah != newValue {
                 if internalAU!.isSetUp() {
@@ -49,13 +50,13 @@ public class AKAutoWah: AKNode, AKToggleable {
         }
     }
     /// Dry/Wet Mix
-    public var mix: Double = 1 {
+    public var mix: Double = 1.0 {
         willSet {
             if mix != newValue {
                 if internalAU!.isSetUp() {
-                    mixParameter?.setValue(Float(newValue * 100.0), originator: token!)
+                    mixParameter?.setValue(Float(newValue), originator: token!)
                 } else {
-                    internalAU?.mix = Float(newValue * 100.0)
+                    internalAU?.mix = Float(newValue)
                 }
             }
         }
@@ -80,17 +81,18 @@ public class AKAutoWah: AKNode, AKToggleable {
 
     // MARK: - Initialization
 
-    /// Initialize this Auto-Wah node
+    /// Initialize this autoWah node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter wah: Wah Amount
-    /// - parameter mix: Dry/Wet Mix
-    /// - parameter amplitude: Overall level
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - wah: Wah Amount
+    ///   - mix: Dry/Wet Mix
+    ///   - amplitude: Overall level
     ///
     public init(
         _ input: AKNode,
-        wah: Double = 0,
-        mix: Double = 1,
+        wah: Double = 0.0,
+        mix: Double = 1.0,
         amplitude: Double = 0.1) {
 
         self.wah = wah
@@ -106,33 +108,33 @@ public class AKAutoWah: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKAutoWahAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKAutoWah",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKAutoWahAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKAutoWahAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        wahParameter       = tree.value(forKey: "wah")       as? AUParameter
-        mixParameter       = tree.value(forKey: "mix")       as? AUParameter
-        amplitudeParameter = tree.value(forKey: "amplitude") as? AUParameter
+        wahParameter       = tree.valueForKey("wah")       as? AUParameter
+        mixParameter       = tree.valueForKey("mix")       as? AUParameter
+        amplitudeParameter = tree.valueForKey("amplitude") as? AUParameter
 
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.wahParameter!.address {
                     self.wah = Double(value)
                 } else if address == self.mixParameter!.address {
@@ -141,13 +143,10 @@ public class AKAutoWah: AKNode, AKToggleable {
                     self.amplitude = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.wah = Float(wah)
-        internalAU?.mix = Float(mix * 100.0)
+        internalAU?.mix = Float(mix)
         internalAU?.amplitude = Float(amplitude)
     }
 

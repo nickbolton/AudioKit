@@ -3,8 +3,8 @@
 //: ---
 //:
 //: ## AutoPan Operation
-//: 
-import PlaygroundSupport
+//:
+import XCPlayground
 import AudioKit
 
 //: This first section sets up parameter naming in such a way to make the operation code easier to read below.
@@ -35,9 +35,9 @@ extension AKOperationEffect {
 
 //: Here we'll use the struct and the extension to refer to the autopan parameters by name
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("guitarloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "guitarloop.wav", baseDir: .Resources)
+
+let player = try AKAudioPlayer(file: file)
 player.looping = true
 
 let oscillator = AKOperation.sineWave(frequency: AutoPan.speed, amplitude: AutoPan.depth)
@@ -54,10 +54,10 @@ let playgroundWidth = 500
 class PlaygroundView: AKPlaygroundView {
     var speedLabel: Label?
     var depthLabel: Label?
-    
+
     override func setup() {
         addTitle("AutoPan")
-        
+
         addLabel("Audio Playback")
         addButton("Drums", action: #selector(startDrumLoop))
         addButton("Bass", action: #selector(startBassLoop))
@@ -65,58 +65,67 @@ class PlaygroundView: AKPlaygroundView {
         addButton("Lead", action: #selector(startLeadLoop))
         addButton("Mix", action: #selector(startMixLoop))
         addButton("Stop", action: #selector(stop))
-        
+
         speedLabel = addLabel("Speed: \(effect.speed)")
         addSlider(#selector(setSpeed), value: effect.speed, minimum: 0.1, maximum: 25)
 
         depthLabel = addLabel("Depth: \(effect.depth)")
         addSlider(#selector(setDepth), value: effect.depth)
+    
     }
 
-    
-    func startLoop(_ part: String) {
+
+    func startLoop(part: String) {
         player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
         player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
     func stop() {
         player.stop()
     }
-    
+
     func setSpeed(slider: Slider) {
         effect.speed = Double(slider.value)
         speedLabel!.text = "Speed: \(String(format: "%0.3f", effect.speed))"
+        printParameters()
     }
 
     func setDepth(slider: Slider) {
         effect.depth = Double(slider.value)
         depthLabel!.text = "Depth: \(String(format: "%0.3f", effect.depth))"
+        printParameters()
+    }
+    
+    func printParameters() {
+        let realSpeed = effect.parameters[AutoPanParameter.Speed.rawValue]
+        let realDepth = effect.parameters[AutoPanParameter.Depth.rawValue]
+        print("speed = \(realSpeed), depth = \(realDepth)")
     }
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: playgroundWidth, height: 650))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

@@ -10,10 +10,11 @@ import AVFoundation
 
 /// 3-pole (18 db/oct slope) Low-Pass filter with resonance and tanh distortion.
 ///
-/// - parameter input: Input node to process
-/// - parameter distortion: Distortion amount.  Zero gives a clean output. Greater than zero adds tanh distortion controlled by the filter parameters, in such a way that both low cutoff and high resonance increase the distortion amount.
-/// - parameter cutoffFrequency: Filter cutoff frequency in Hertz.
-/// - parameter resonance: Resonance. Usually a value in the range 0-1. A value of 1.0 will self oscillate at the cutoff frequency. Values slightly greater than 1 are possible for more sustained oscillation and an “overdrive” effect.
+/// - Parameters:
+///   - input: Input node to process
+///   - distortion: Distortion amount.  Zero gives a clean output. Greater than zero adds tanh distortion controlled by the filter parameters, in such a way that both low cutoff and high resonance increase the distortion amount.
+///   - cutoffFrequency: Filter cutoff frequency in Hertz.
+///   - resonance: Resonance. Usually a value in the range 0-1. A value of 1.0 will self oscillate at the cutoff frequency. Values slightly greater than 1 are possible for more sustained oscillation and an “overdrive” effect.
 ///
 public class AKThreePoleLowpassFilter: AKNode, AKToggleable {
 
@@ -82,10 +83,11 @@ public class AKThreePoleLowpassFilter: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter distortion: Distortion amount.  Zero gives a clean output. Greater than zero adds tanh distortion controlled by the filter parameters, in such a way that both low cutoff and high resonance increase the distortion amount.
-    /// - parameter cutoffFrequency: Filter cutoff frequency in Hertz.
-    /// - parameter resonance: Resonance. Usually a value in the range 0-1. A value of 1.0 will self oscillate at the cutoff frequency. Values slightly greater than 1 are possible for more sustained oscillation and an “overdrive” effect.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - distortion: Distortion amount.  Zero gives a clean output. Greater than zero adds tanh distortion controlled by the filter parameters, in such a way that both low cutoff and high resonance increase the distortion amount.
+    ///   - cutoffFrequency: Filter cutoff frequency in Hertz.
+    ///   - resonance: Resonance. Usually a value in the range 0-1. A value of 1.0 will self oscillate at the cutoff frequency. Values slightly greater than 1 are possible for more sustained oscillation and an “overdrive” effect.
     ///
     public init(
         _ input: AKNode,
@@ -106,33 +108,33 @@ public class AKThreePoleLowpassFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKThreePoleLowpassFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKThreePoleLowpassFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKThreePoleLowpassFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKThreePoleLowpassFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        distortionParameter      = tree.value(forKey: "distortion")      as? AUParameter
-        cutoffFrequencyParameter = tree.value(forKey: "cutoffFrequency") as? AUParameter
-        resonanceParameter       = tree.value(forKey: "resonance")       as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        distortionParameter      = tree.valueForKey("distortion")      as? AUParameter
+        cutoffFrequencyParameter = tree.valueForKey("cutoffFrequency") as? AUParameter
+        resonanceParameter       = tree.valueForKey("resonance")       as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.distortionParameter!.address {
                     self.distortion = Double(value)
                 } else if address == self.cutoffFrequencyParameter!.address {
@@ -141,11 +143,8 @@ public class AKThreePoleLowpassFilter: AKNode, AKToggleable {
                     self.resonance = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.distortion = Float(distortion)
         internalAU?.cutoffFrequency = Float(cutoffFrequency)
         internalAU?.resonance = Float(resonance)

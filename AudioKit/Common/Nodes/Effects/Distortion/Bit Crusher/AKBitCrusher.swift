@@ -10,9 +10,10 @@ import AVFoundation
 
 /// This will digitally degrade a signal.
 ///
-/// - parameter input: Input node to process
-/// - parameter bitDepth: The bit depth of signal output. Typically in range (1-24). Non-integer values are OK.
-/// - parameter sampleRate: The sample rate of signal output.
+/// - Parameters:
+///   - input: Input node to process
+///   - bitDepth: The bit depth of signal output. Typically in range (1-24). Non-integer values are OK.
+///   - sampleRate: The sample rate of signal output.
 ///
 public class AKBitCrusher: AKNode, AKToggleable {
 
@@ -68,9 +69,10 @@ public class AKBitCrusher: AKNode, AKToggleable {
 
     /// Initialize this bitcrusher node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter bitDepth: The bit depth of signal output. Typically in range (1-24). Non-integer values are OK.
-    /// - parameter sampleRate: The sample rate of signal output.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - bitDepth: The bit depth of signal output. Typically in range (1-24). Non-integer values are OK.
+    ///   - sampleRate: The sample rate of signal output.
     ///
     public init(
         _ input: AKNode,
@@ -89,43 +91,40 @@ public class AKBitCrusher: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKBitCrusherAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKBitCrusher",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKBitCrusherAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKBitCrusherAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        bitDepthParameter   = tree.value(forKey: "bitDepth")   as? AUParameter
-        sampleRateParameter = tree.value(forKey: "sampleRate") as? AUParameter
+        bitDepthParameter   = tree.valueForKey("bitDepth")   as? AUParameter
+        sampleRateParameter = tree.valueForKey("sampleRate") as? AUParameter
 
-        let observer: AUParameterObserver = {
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.bitDepthParameter!.address {
                     self.bitDepth = Double(value)
                 } else if address == self.sampleRateParameter!.address {
                     self.sampleRate = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.bitDepth = Float(bitDepth)
         internalAU?.sampleRate = Float(sampleRate)
     }

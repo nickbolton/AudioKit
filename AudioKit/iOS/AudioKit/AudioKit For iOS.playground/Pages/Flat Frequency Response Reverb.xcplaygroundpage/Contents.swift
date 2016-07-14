@@ -4,13 +4,17 @@
 //:
 //: ## Flat Frequency Response Reverb
 //:
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("drumloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "drumloop.wav", baseDir: .Resources)
+
+
+//: Here we set up a player to the loop the file's playback
+let player = try AKAudioPlayer(file: file)
 player.looping = true
+
+//: The amplitude tracker's passes its input to the output, so we can insert into the signal chain at the bottom
 var reverb = AKFlatFrequencyResponseReverb(player, loopDuration: 0.1)
 
 //: Set the parameters of the delay here
@@ -41,33 +45,33 @@ class PlaygroundView: AKPlaygroundView {
         addSlider(#selector(setDuration), value: reverb.reverbDuration, minimum: 0, maximum: 5)
     }
 
-    func startLoop(_ part: String) {
+    func startLoop(part: String) {
         player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
         player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
-    
+
     func stop() {
         player.stop()
     }
@@ -80,7 +84,7 @@ class PlaygroundView: AKPlaygroundView {
 
     func printCode() {
         // Here we're just printing out the preset so it can be copy and pasted into code
-        
+
         print("public func presetXXXXXX() {")
         print("    reverbDuration = \(String(format: "%0.3f", reverb.reverbDuration))")
         print("}\n")
@@ -88,7 +92,7 @@ class PlaygroundView: AKPlaygroundView {
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height: 300))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

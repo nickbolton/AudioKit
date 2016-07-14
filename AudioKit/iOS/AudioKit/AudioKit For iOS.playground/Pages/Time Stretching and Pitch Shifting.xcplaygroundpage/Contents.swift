@@ -5,13 +5,15 @@
 //: ## Time Stretching and Pitch Shifting
 //: ### With AKTimePitch you can easily change the pitch and speed of a player-generated sound.  It does not work on live input or generated signals.
 //:
-import PlaygroundSupport
+import XCPlayground
 import AudioKit
 
-let bundle = Bundle.main()
-let file = bundle.pathForResource("mixloop", ofType: "wav")
-var player = AKAudioPlayer(file!)
+let file = try AKAudioFile(readFileName: "mixloop.wav", baseDir: .Resources)
+
+//: Here we set up a player to the loop the file's playback
+var player = try AKAudioPlayer(file: file)
 player.looping = true
+
 
 var timePitch = AKTimePitch(player)
 
@@ -54,37 +56,33 @@ class PlaygroundView: AKPlaygroundView {
 
         pitchLabel = addLabel("Pitch: \(timePitch.pitch) Cents")
         addSlider(#selector(setPitch), value: timePitch.pitch, minimum: -2400, maximum: 2400)
-
-        overlapLabel = addLabel("Overlap: \(timePitch.overlap)")
-        addSlider(#selector(setOverlap), value: timePitch.overlap, minimum: 3.0, maximum: 32.0)
-
     }
 
     //: Handle UI Events
 
-    func startLoop(_ part: String) {
+    func startLoop(part: String) {
         player.stop()
-        let file = bundle.pathForResource("\(part)loop", ofType: "wav")
-        player.replaceFile(file!)
+        let file = try? AKAudioFile(readFileName: "\(part)loop.wav", baseDir: .Resources)
+        try? player.replaceFile(file!)
         player.play()
     }
-    
+
     func startDrumLoop() {
         startLoop("drum")
     }
-    
+
     func startBassLoop() {
         startLoop("bass")
     }
-    
+
     func startGuitarLoop() {
         startLoop("guitar")
     }
-    
+
     func startLeadLoop() {
         startLoop("lead")
     }
-    
+
     func startMixLoop() {
         startLoop("mix")
     }
@@ -112,16 +110,11 @@ class PlaygroundView: AKPlaygroundView {
         pitchLabel!.text = "Pitch: \(pitch) Cents"
     }
 
-    func setOverlap(slider: Slider) {
-        timePitch.overlap = Double(slider.value)
-        let overlap = String(format: "%0.1f", timePitch.overlap)
-        overlapLabel!.text = "Overlap: \(overlap)"
-    }
 
 }
 
 let view = PlaygroundView(frame: CGRect(x: 0, y: 0, width: 500, height: 600))
-PlaygroundPage.current.needsIndefiniteExecution = true
-PlaygroundPage.current.liveView = view
+XCPlaygroundPage.currentPage.needsIndefiniteExecution = true
+XCPlaygroundPage.currentPage.liveView = view
 
 //: [TOC](Table%20Of%20Contents) | [Previous](@previous) | [Next](@next)

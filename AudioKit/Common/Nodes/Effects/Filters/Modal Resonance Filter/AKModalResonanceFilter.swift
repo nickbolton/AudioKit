@@ -12,9 +12,10 @@ import AVFoundation
 /// can be created using  passing an impulse through a combination of modal
 /// filters.
 ///
-/// - parameter input: Input node to process
-/// - parameter frequency: Resonant frequency of the filter.
-/// - parameter qualityFactor: Quality factor of the filter. Roughly equal to Q/frequency.
+/// - Parameters:
+///   - input: Input node to process
+///   - frequency: Resonant frequency of the filter.
+///   - qualityFactor: Quality factor of the filter. Roughly equal to Q/frequency.
 ///
 public class AKModalResonanceFilter: AKNode, AKToggleable {
 
@@ -70,9 +71,10 @@ public class AKModalResonanceFilter: AKNode, AKToggleable {
 
     /// Initialize this filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter frequency: Resonant frequency of the filter.
-    /// - parameter qualityFactor: Quality factor of the filter. Roughly equal to Q/frequency.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - frequency: Resonant frequency of the filter.
+    ///   - qualityFactor: Quality factor of the filter. Roughly equal to Q/frequency.
     ///
     public init(
         _ input: AKNode,
@@ -91,43 +93,40 @@ public class AKModalResonanceFilter: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKModalResonanceFilterAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKModalResonanceFilter",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKModalResonanceFilterAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKModalResonanceFilterAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        frequencyParameter     = tree.value(forKey: "frequency")     as? AUParameter
-        qualityFactorParameter = tree.value(forKey: "qualityFactor") as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        frequencyParameter     = tree.valueForKey("frequency")     as? AUParameter
+        qualityFactorParameter = tree.valueForKey("qualityFactor") as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.frequencyParameter!.address {
                     self.frequency = Double(value)
                 } else if address == self.qualityFactorParameter!.address {
                     self.qualityFactor = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.frequency = Float(frequency)
         internalAU?.qualityFactor = Float(qualityFactor)
     }

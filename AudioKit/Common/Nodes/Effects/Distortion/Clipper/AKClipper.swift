@@ -11,8 +11,9 @@ import AVFoundation
 /// Clips a signal to a predefined limit, in a "soft" manner, using one of three
 /// methods.
 ///
-/// - parameter input: Input node to process
-/// - parameter limit: Threshold / limiting value.
+/// - Parameters:
+///   - input: Input node to process
+///   - limit: Threshold / limiting value.
 ///
 public class AKClipper: AKNode, AKToggleable {
 
@@ -55,8 +56,9 @@ public class AKClipper: AKNode, AKToggleable {
 
     /// Initialize this clipper node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter limit: Threshold / limiting value.
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - limit: Threshold / limiting value.
     ///
     public init(
         _ input: AKNode,
@@ -73,40 +75,37 @@ public class AKClipper: AKNode, AKToggleable {
 
         AUAudioUnit.registerSubclass(
             AKClipperAudioUnit.self,
-            as: description,
+            asComponentDescription: description,
             name: "Local AKClipper",
             version: UInt32.max)
 
         super.init()
-        AVAudioUnit.instantiate(with: description, options: []) {
+        AVAudioUnit.instantiateWithComponentDescription(description, options: []) {
             avAudioUnit, error in
 
             guard let avAudioUnitEffect = avAudioUnit else { return }
 
             self.avAudioNode = avAudioUnitEffect
-            self.internalAU = avAudioUnitEffect.auAudioUnit as? AKClipperAudioUnit
+            self.internalAU = avAudioUnitEffect.AUAudioUnit as? AKClipperAudioUnit
 
-            AudioKit.engine.attach(self.avAudioNode)
+            AudioKit.engine.attachNode(self.avAudioNode)
             input.addConnectionPoint(self)
         }
 
         guard let tree = internalAU?.parameterTree else { return }
 
-        limitParameter = tree.value(forKey: "limit") as? AUParameter
-        
-        let observer: AUParameterObserver = {
+        limitParameter = tree.valueForKey("limit") as? AUParameter
+
+        token = tree.tokenByAddingParameterObserver {
             address, value in
-            
-            let executionBlock = {
+
+            dispatch_async(dispatch_get_main_queue()) {
                 if address == self.limitParameter!.address {
                     self.limit = Double(value)
                 }
             }
-            
-            DispatchQueue.main.async(execute: executionBlock)
         }
-        
-        token = tree.token(byAddingParameterObserver: observer)
+
         internalAU?.limit = Float(limit)
     }
 

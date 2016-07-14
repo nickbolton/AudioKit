@@ -10,9 +10,10 @@ import AVFoundation
 
 /// AudioKit version of Apple's LowPassFilter Audio Unit
 ///
-/// - parameter input: Input node to process
-/// - parameter cutoffFrequency: Cutoff Frequency (Hz) ranges from 10 to 22050 (Default: 6900)
-/// - parameter resonance: Resonance (dB) ranges from -20 to 40 (Default: 0)
+/// - Parameters:
+///   - input: Input node to process
+///   - cutoffFrequency: Cutoff Frequency (Hz) ranges from 10 to 22050 (Default: 6900)
+///   - resonance: Resonance (dB) ranges from -20 to 40 (Default: 0)
 ///
 public class AKLowPassFilter: AKNode, AKToggleable {
 
@@ -24,7 +25,7 @@ public class AKLowPassFilter: AKNode, AKToggleable {
         componentFlagsMask: 0)
 
     internal var internalEffect = AVAudioUnitEffect()
-    internal var internalAU: AudioUnit? = nil
+    internal var internalAU: AudioUnit = nil
 
     private var mixer: AKMixer
 
@@ -33,12 +34,12 @@ public class AKLowPassFilter: AKNode, AKToggleable {
         didSet {
             if cutoffFrequency < 10 {
                 cutoffFrequency = 10
-            }            
+            }
             if cutoffFrequency > 22050 {
                 cutoffFrequency = 22050
             }
             AudioUnitSetParameter(
-                internalAU!,
+                internalAU,
                 kLowPassParam_CutoffFrequency,
                 kAudioUnitScope_Global, 0,
                 Float(cutoffFrequency), 0)
@@ -50,12 +51,12 @@ public class AKLowPassFilter: AKNode, AKToggleable {
         didSet {
             if resonance < -20 {
                 resonance = -20
-            }            
+            }
             if resonance > 40 {
                 resonance = 40
             }
             AudioUnitSetParameter(
-                internalAU!,
+                internalAU,
                 kLowPassParam_Resonance,
                 kAudioUnitScope_Global, 0,
                 Float(resonance), 0)
@@ -84,12 +85,13 @@ public class AKLowPassFilter: AKNode, AKToggleable {
     public var isStarted = true
 
     // MARK: - Initialization
-    
+
     /// Initialize the low pass filter node
     ///
-    /// - parameter input: Input node to process
-    /// - parameter cutoffFrequency: Cutoff Frequency (Hz) ranges from 10 to 22050 (Default: 6900)
-    /// - parameter resonance: Resonance (dB) ranges from -20 to 40 (Default: 0)
+    /// - Parameters:
+    ///   - input: Input node to process
+    ///   - cutoffFrequency: Cutoff Frequency (Hz) ranges from 10 to 22050 (Default: 6900)
+    ///   - resonance: Resonance (dB) ranges from -20 to 40 (Default: 0)
     ///
     public init(
         _ input: AKNode,
@@ -108,17 +110,17 @@ public class AKLowPassFilter: AKNode, AKToggleable {
 
             internalEffect = AVAudioUnitEffect(audioComponentDescription: cd)
             super.init()
-            
-            AudioKit.engine.attach(internalEffect)
+
+            AudioKit.engine.attachNode(internalEffect)
             internalAU = internalEffect.audioUnit
             AudioKit.engine.connect((effectGain?.avAudioNode)!, to: internalEffect, format: AudioKit.format)
             AudioKit.engine.connect(internalEffect, to: mixer.avAudioNode, format: AudioKit.format)
             avAudioNode = mixer.avAudioNode
 
-            AudioUnitSetParameter(internalAU!, kLowPassParam_CutoffFrequency, kAudioUnitScope_Global, 0, Float(cutoffFrequency), 0)
-            AudioUnitSetParameter(internalAU!, kLowPassParam_Resonance, kAudioUnitScope_Global, 0, Float(resonance), 0)
+            AudioUnitSetParameter(internalAU, kLowPassParam_CutoffFrequency, kAudioUnitScope_Global, 0, Float(cutoffFrequency), 0)
+            AudioUnitSetParameter(internalAU, kLowPassParam_Resonance, kAudioUnitScope_Global, 0, Float(resonance), 0)
     }
-    
+
     // MARK: - Control
 
     /// Function to start, play, or activate the node, all do the same thing
