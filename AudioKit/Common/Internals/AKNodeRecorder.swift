@@ -176,7 +176,7 @@ public class AKNodeRecorder {
         let settings = internalAudioFile.processingFormat.settings
 
         do {
-            try fileManager.removeItemAtPath(internalAudioFile.url.absoluteString)
+            try fileManager.removeItemAtPath(internalAudioFile.url.absoluteString!)
         } catch let error as NSError {
             print ("AKNodeRecorder Error: cannot delete Recording file:  \(internalAudioFile.fileNamePlusExtension)")
             throw error
